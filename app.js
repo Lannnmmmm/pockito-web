@@ -19,8 +19,13 @@ const transactionMessage = document.getElementById("transaction-message");
 const transactionList = document.getElementById("transaction-list");
 const transactionType = document.getElementById("transaction-type");
 const transactionCategory = document.getElementById("transaction-category");
-const newCategoryInput = document.getElementById("new-category-name");
-const addCategoryButton = document.getElementById("add-category-button");
+const categoryForm = document.getElementById("category-form");
+const customCategoryName = document.getElementById("custom-category-name");
+const customCategoryType = document.getElementById("custom-category-type");
+const categoryMessage = document.getElementById("category-message");
+const categoryList = document.getElementById("category-list");
+const viewButtons = document.querySelectorAll("[data-view-target]");
+const views = document.querySelectorAll("[data-view]");
 
 const rupiah = new Intl.NumberFormat("id-ID", {
     style: "currency",
@@ -136,6 +141,7 @@ async function loadCategories() {
 
     currentCategories = refreshedCategories;
     renderCategoryOptions();
+    renderCategoryList();
 }
 
 function renderCategoryOptions() {
@@ -158,6 +164,61 @@ function renderCategoryOptions() {
 
     if ([...transactionCategory.options].some((option) => option.value === previousValue)) {
         transactionCategory.value = previousValue;
+    }
+}
+
+function renderCategoryList() {
+    categoryList.replaceChildren();
+
+    for (const type of ["expense", "income"]) {
+        const group = document.createElement("section");
+        group.className = "category-group";
+
+        const heading = document.createElement("h3");
+        heading.textContent = type === "expense" ? "Pengeluaran" : "Pemasukan";
+        group.append(heading);
+
+        const categories = currentCategories.filter((category) => category.type === type);
+        if (categories.length === 0) {
+            const empty = document.createElement("p");
+            empty.className = "empty-note";
+            empty.textContent = "Belum ada kategori.";
+            group.append(empty);
+        }
+
+        for (const category of categories) {
+            const item = document.createElement("div");
+            item.className = "category-item";
+
+            const name = document.createElement("strong");
+            name.textContent = category.name;
+
+            const isDefault = defaultCategories.some((entry) =>
+                entry.type === category.type &&
+                entry.name.toLocaleLowerCase() === category.name.toLocaleLowerCase()
+            );
+
+            const tag = document.createElement("small");
+            tag.className = "category-tag";
+            tag.textContent = isDefault ? "Bawaan Pockito" : "Personal";
+
+            item.append(name, tag);
+            group.append(item);
+        }
+
+        categoryList.append(group);
+    }
+}
+
+function showView(viewName) {
+    for (const view of views) {
+        view.hidden = view.dataset.view !== viewName;
+    }
+
+    for (const button of viewButtons) {
+        const isActive = button.dataset.viewTarget === viewName;
+        button.classList.toggle("active", isActive);
+        button.setAttribute("aria-current", isActive ? "page" : "false");
     }
 }
 
@@ -245,6 +306,7 @@ async function openUserSession(user) {
         await loadCategories();
         await loadTransactions();
         showDashboard();
+        showView("home");
     } catch (error) {
         console.error("Gagal memuat data:", error);
         showMessage(
@@ -386,56 +448,57 @@ async function initializeApp() {
 
 transactionType.addEventListener("change", renderCategoryOptions);
 
-addCategoryButton.addEventListener("click", async () => {
+for (const button of viewButtons) {
+    button.addEventListener("click", () => showView(button.dataset.viewTarget));
+}
+
+categoryForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
     if (!currentUser) {
-        showMessage(transactionMessage, "Silakan masuk kembali.", true);
+        showMessage(categoryMessage, "Silakan masuk kembali.", true);
         return;
     }
 
-    const name = newCategoryInput.value.trim();
-    const type = transactionType.value;
+    const name = customCategoryName.value.trim();
+    const type = customCategoryType.value;
+    const submitButton = categoryForm.querySelector('button[type="submit"]');
 
     if (!name) {
-        showMessage(transactionMessage, "Isi nama kategori terlebih dahulu.", true);
-        newCategoryInput.focus();
+        showMessage(categoryMessage, "Isi nama kategori terlebih dahulu.", true);
+        customCategoryName.focus();
         return;
     }
 
     if (currentCategories.some((category) =>
         category.type === type && category.name.toLocaleLowerCase() === name.toLocaleLowerCase()
     )) {
-        showMessage(transactionMessage, "Kategori dengan nama itu sudah ada untuk jenis transaksi ini.", true);
+        showMessage(categoryMessage, "Kategori dengan nama itu sudah ada untuk jenis transaksi ini.", true);
         return;
     }
 
-    addCategoryButton.disabled = true;
-    showMessage(transactionMessage, "Menambahkan kategori...");
+    submitButton.disabled = true;
+    showMessage(categoryMessage, "Menambahkan kategori...");
 
     try {
-        const { data: newCategory, error } = await supabase
+        const { error } = await supabase
             .from("categories")
             .insert({
                 user_id: currentUser.id,
                 name,
                 type
-            })
-            .select("id, name, type")
-            .single();
+            });
 
         if (error) throw error;
 
         await loadCategories();
-        transactionCategory.value = newCategory.id;
-        newCategoryInput.value = "";
-        showMessage(
-            transactionMessage,
-            `Kategori "${newCategory.name}" berhasil ditambahkan untuk ${type === "income" ? "pemasukan" : "pengeluaran"}.`
-        );
+        customCategoryName.value = "";
+        showMessage(categoryMessage, `Kategori "${name}" berhasil ditambahkan.`);
     } catch (error) {
         console.error("Gagal menambahkan kategori:", error);
-        showMessage(transactionMessage, "Kategori gagal ditambahkan. Coba lagi.", true);
+        showMessage(categoryMessage, "Kategori gagal ditambahkan. Coba lagi.", true);
     } finally {
-        addCategoryButton.disabled = false;
+        submitButton.disabled = false;
     }
 });
 
