@@ -85,6 +85,7 @@ const rupiah = new Intl.NumberFormat("id-ID", {
 let currentUser = null;
 let currentWallets = [];
 let currentCategories = [];
+let reportMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 
 function localDateTimeValues() {
     const now = new Date();
@@ -617,6 +618,119 @@ function renderHistoryTransactions() {
     }
 }
 
+function renderReportBreakdown(containerId, transactions, type) {
+    const container = document.getElementById(containerId);
+    container.replaceChildren();
+
+    const totalsByCategory = new Map();
+    for (const transaction of transactions) {
+        if (transaction.type !== type) continue;
+        const category = currentCategories.find((item) => item.id === transaction.category_id);
+        const name = category?.name || "Kategori dihapus";
+        totalsByCategory.set(name, (totalsByCategory.get(name) || 0) + Number(transaction.amount));
+    }
+
+    const entries = [...totalsByCategory.entries()].sort((a, b) => b[1] - a[1]);
+    const total = entries.reduce((sum, entry) => sum + entry[1], 0);
+    if (entries.length === 0) {
+        const empty = document.createElement("p");
+        empty.className = "empty-note";
+        empty.textContent = type === "income"
+            ? "Belum ada pemasukan pada bulan ini."
+            : "Belum ada pengeluaran pada bulan ini.";
+        container.append(empty);
+        return;
+    }
+
+    const palette = ["#6f9e7a", "#8eb6a0", "#d8a66b", "#7298bd", "#bb8caa", "#b6a76b", "#8a8dc4", "#d47e70"];
+    const chart = document.createElement("div");
+    chart.className = "report-chart-layout";
+    const donut = document.createElement("div");
+    donut.className = "report-donut";
+    let cursor = 0;
+    const segments = entries.map((entry, index) => {
+        const start = cursor;
+        cursor += total ? entry[1] / total * 100 : 0;
+        return `${palette[index % palette.length]} ${start}% ${cursor}%`;
+    });
+    donut.style.background = `conic-gradient(${segments.join(", ")})`;
+    donut.setAttribute("role", "img");
+    donut.setAttribute("aria-label", `Diagram kategori dengan total ${rupiah.format(total)}`);
+    const hole = document.createElement("div");
+    hole.className = "report-donut-hole";
+    const donutTotal = document.createElement("strong");
+    donutTotal.textContent = rupiah.format(total);
+    const donutCaption = document.createElement("span");
+    donutCaption.textContent = type === "income" ? "Pemasukan" : "Pengeluaran";
+    hole.append(donutTotal, donutCaption);
+    donut.append(hole);
+    chart.append(donut);
+
+    const legend = document.createElement("div");
+    legend.className = "report-legend";
+    entries.forEach(([name, amount], index) => {
+        const row = document.createElement("div");
+        row.className = "report-legend-row";
+        const label = document.createElement("span");
+        label.className = "report-legend-label";
+        const swatch = document.createElement("span");
+        swatch.className = "report-swatch";
+        swatch.style.backgroundColor = palette[index % palette.length];
+        const categoryName = document.createElement("span");
+        categoryName.textContent = name;
+        label.append(swatch, categoryName);
+        const values = document.createElement("div");
+        values.className = "report-legend-values";
+        const value = document.createElement("strong");
+        value.textContent = rupiah.format(amount);
+        const percent = document.createElement("small");
+        percent.textContent = `${total ? Math.round(amount / total * 100) : 0}%`;
+        values.append(value, percent);
+        row.append(label, values);
+        legend.append(row);
+    });
+    chart.append(legend);
+    container.append(chart);
+}
+
+function renderReports() {
+    const selectedMonth = monthKey(reportMonth);
+    const transactions = cachedTransactions.filter((transaction) =>
+        transaction.transaction_date?.startsWith(selectedMonth)
+    );
+    let income = 0;
+    let expense = 0;
+    for (const transaction of transactions) {
+        if (transaction.type === "income") income += Number(transaction.amount);
+        else if (transaction.type === "expense") expense += Number(transaction.amount);
+    }
+    const remaining = income - expense;
+    const spentPercent = income > 0 ? expense / income * 100 : null;
+    document.getElementById("report-month-label").textContent = monthLabel(reportMonth);
+    document.getElementById("report-income").textContent = rupiah.format(income);
+    document.getElementById("report-expense").textContent = rupiah.format(expense);
+    document.getElementById("report-remaining").textContent = rupiah.format(remaining);
+    document.getElementById("report-spent-percent").textContent =
+        spentPercent === null ? "—" : `${Math.round(spentPercent)}%`;
+    const insight = document.getElementById("report-insight");
+    if (transactions.length === 0) {
+        insight.textContent = "Belum ada transaksi pada periode ini.";
+    } else if (income === 0 && expense > 0) {
+        insight.textContent = "Belum ada pemasukan tercatat pada bulan ini, tetapi ada pengeluaran.";
+    } else if (spentPercent !== null && spentPercent > 100) {
+        insight.textContent = `Pengeluaran melebihi pemasukan sebesar ${rupiah.format(expense - income)} pada bulan ini.`;
+    } else if (spentPercent !== null) {
+        insight.textContent = `${Math.round(spentPercent)}% pemasukan digunakan; ${rupiah.format(remaining)} adalah selisih pemasukan dan pengeluaran bulan ini.`;
+    } else {
+        insight.textContent = "Ada transaksi tercatat pada bulan ini.";
+    }
+    const nextMonth = new Date(reportMonth.getFullYear(), reportMonth.getMonth() + 1, 1);
+    document.getElementById("report-next-month").disabled =
+        monthKey(nextMonth) > monthKey(new Date());
+    renderReportBreakdown("report-income-breakdown", transactions, "income");
+    renderReportBreakdown("report-expense-breakdown", transactions, "expense");
+}
+
 async function loadTransactions() {
     const { data: transactions, error } = await supabase
         .from("transactions")
@@ -665,6 +779,7 @@ async function loadTransactions() {
     renderHistoryTransactions();
     renderWalletList();
     renderHomeWalletBalances();
+    renderReports();
 }
 
 async function openUserSession(user) {
@@ -985,6 +1100,19 @@ async function initializeApp() {
         showMessage(loginMessage, "");
     }
 }
+
+document.getElementById("report-prev-month").addEventListener("click", () => {
+    reportMonth = new Date(reportMonth.getFullYear(), reportMonth.getMonth() - 1, 1);
+    renderReports();
+});
+
+document.getElementById("report-next-month").addEventListener("click", () => {
+    const nextMonth = new Date(reportMonth.getFullYear(), reportMonth.getMonth() + 1, 1);
+    if (monthKey(nextMonth) <= monthKey(new Date())) {
+        reportMonth = nextMonth;
+        renderReports();
+    }
+});
 
 document.getElementById("history-prev-month").addEventListener("click", () => {
     historyMonth = new Date(historyMonth.getFullYear(), historyMonth.getMonth() - 1, 1);
