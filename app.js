@@ -254,7 +254,7 @@ async function deleteWallet(wallet) {
         showMessage(walletMessage, `Dompet "${wallet.name}" berhasil dihapus. Riwayat transaksi tetap tersimpan.`);
     } catch (error) {
         console.error("Gagal menghapus dompet:", error);
-        showMessage(walletMessage, "Dompet gagal dihapus. Transaksi tidak sengaja dihapus; coba lagi.", true);
+        showMessage(walletMessage, "Dompet gagal dihapus. Riwayat transaksi tetap dipertahankan; coba lagi.", true);
         try {
             await loadWallets();
             await loadTransactions();
