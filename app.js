@@ -194,14 +194,39 @@ function renderWalletList() {
     }
 
     for (const wallet of currentWallets) {
+        const walletTransactions = cachedTransactions.filter(
+            (transaction) => transaction.wallet_id === wallet.id
+        );
+        const income = walletTransactions
+            .filter((transaction) => transaction.type === "income")
+            .reduce((sum, transaction) => sum + Number(transaction.amount), 0);
+        const expense = walletTransactions
+            .filter((transaction) => transaction.type === "expense")
+            .reduce((sum, transaction) => sum + Number(transaction.amount), 0);
+
         const item = document.createElement("div");
-        item.className = "category-item";
+        item.className = "category-item wallet-item";
+
+        const details = document.createElement("div");
+        details.className = "wallet-item-details";
+
         const name = document.createElement("strong");
         name.textContent = wallet.name;
+
+        const balance = document.createElement("strong");
+        balance.className = "wallet-balance";
+        balance.textContent = rupiah.format(income - expense);
+
+        const totals = document.createElement("small");
+        totals.className = "wallet-totals";
+        totals.textContent = `Masuk ${rupiah.format(income)} · Keluar ${rupiah.format(expense)}`;
+
         const tag = document.createElement("small");
         tag.className = "category-tag";
         tag.textContent = "Dompet";
-        item.append(name, tag);
+
+        details.append(name, balance, totals);
+        item.append(details, tag);
         walletList.append(item);
     }
 }
@@ -374,12 +399,16 @@ function createTransactionItem(transaction) {
         ? `${transaction.transaction_date} • ${transaction.transaction_time}`
         : transaction.transaction_date;
 
+    const wallet = currentWallets.find((entry) => entry.id === transaction.wallet_id);
+    const walletLabel = document.createElement("small");
+    walletLabel.textContent = wallet ? `Dompet: ${wallet.name}` : "Tanpa dompet";
+
     const value = document.createElement("div");
     value.className = `transaction-amount ${transaction.type === "income" ? "income" : "expense"}`;
     const sign = transaction.type === "income" ? "+" : "−";
     value.textContent = `${sign}${rupiah.format(Number(transaction.amount))}`;
 
-    info.append(description, categoryLabel, date);
+    info.append(description, categoryLabel, date, walletLabel);
     item.append(info, value);
     return item;
 }
@@ -438,7 +467,7 @@ function renderHistoryTransactions() {
 async function loadTransactions() {
     const { data: transactions, error } = await supabase
         .from("transactions")
-        .select("id, type, amount, description, transaction_date, transaction_time, category_id")
+        .select("id, type, amount, description, transaction_date, transaction_time, category_id, wallet_id")
         .eq("user_id", currentUser.id)
         .order("transaction_date", { ascending: false })
         .order("transaction_time", { ascending: false, nullsFirst: false })
@@ -481,6 +510,7 @@ async function loadTransactions() {
 
     renderHomeTransactions(cachedTransactions);
     renderHistoryTransactions();
+    renderWalletList();
 }
 
 async function openUserSession(user) {
@@ -750,6 +780,7 @@ transactionForm.addEventListener("submit", async (event) => {
         historyMonth = new Date(`${transactionDate}T00:00:00`);
         historyMonth = new Date(historyMonth.getFullYear(), historyMonth.getMonth(), 1);
         await loadTransactions();
+        await loadWallets();
 
         showMessage(transactionMessage, "Transaksi berhasil disimpan!");
     } catch (error) {
