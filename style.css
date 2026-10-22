@@ -1146,7 +1146,7 @@ button:disabled {
     justify-content: center;
     gap: 4px;
     padding: 8px;
-    background: var(--panel);
+    background: var(--surface);
     border-radius: 50%;
     text-align: center;
 }
