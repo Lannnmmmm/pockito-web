@@ -182,6 +182,88 @@ function renderWalletOptions() {
     }
 }
 
+function walletIcon(name) {
+    const normalized = name.toLocaleLowerCase("id-ID");
+    if (normalized.includes("tunai") || normalized.includes("cash")) return "💵";
+    if (normalized.includes("tabungan") || normalized.includes("nabung")) return "🐷";
+    if (normalized.includes("seabank") || normalized.includes("sea bank")) return "🌊";
+    if (normalized.includes("bri") || normalized.includes("bca") ||
+        normalized.includes("bni") || normalized.includes("bsi") ||
+        normalized.includes("mandiri") || normalized.includes("bank")) return "🏦";
+    if (normalized.includes("ewallet") || normalized.includes("e-wallet") ||
+        normalized.includes("gopay") || normalized.includes("ovo") ||
+        normalized.includes("dana") || normalized.includes("shopeepay")) return "📱";
+    return "👛";
+}
+
+async function renameWallet(wallet) {
+    const proposedName = window.prompt("Masukkan nama baru untuk dompet ini:", wallet.name);
+    if (proposedName === null) return;
+    const name = proposedName.trim();
+    if (!name) {
+        showMessage(walletMessage, "Nama dompet tidak boleh kosong.", true);
+        return;
+    }
+    if (currentWallets.some((item) => item.id !== wallet.id &&
+        item.name.toLocaleLowerCase("id-ID") === name.toLocaleLowerCase("id-ID"))) {
+        showMessage(walletMessage, "Nama dompet itu sudah ada.", true);
+        return;
+    }
+
+    try {
+        const { error } = await supabase.from("wallets")
+            .update({ name })
+            .eq("id", wallet.id)
+            .eq("user_id", currentUser.id);
+        if (error) throw error;
+        await loadWallets();
+        renderHomeTransactions(cachedTransactions);
+        renderHistoryTransactions();
+        renderHomeWalletBalances();
+        showMessage(walletMessage, `Nama dompet berhasil diubah menjadi "${name}".`);
+    } catch (error) {
+        console.error("Gagal mengubah nama dompet:", error);
+        showMessage(walletMessage, "Nama dompet gagal diubah. Coba lagi.", true);
+    }
+}
+
+async function deleteWallet(wallet) {
+    const linkedCount = cachedTransactions.filter((transaction) => transaction.wallet_id === wallet.id).length;
+    const explanation = linkedCount > 0
+        ? `Dompet "${wallet.name}" memiliki ${linkedCount} transaksi. Transaksi akan tetap tersimpan di riwayat, tetapi tidak lagi terhubung ke dompet ini. Hapus dompet?`
+        : `Hapus dompet "${wallet.name}"?`;
+    if (!window.confirm(explanation)) return;
+
+    try {
+        if (linkedCount > 0) {
+            const { error: detachError } = await supabase.from("transactions")
+                .update({ wallet_id: null })
+                .eq("wallet_id", wallet.id)
+                .eq("user_id", currentUser.id);
+            if (detachError) throw detachError;
+        }
+
+        const { error } = await supabase.from("wallets")
+            .delete()
+            .eq("id", wallet.id)
+            .eq("user_id", currentUser.id);
+        if (error) throw error;
+
+        await loadWallets();
+        await loadTransactions();
+        showMessage(walletMessage, `Dompet "${wallet.name}" berhasil dihapus. Riwayat transaksi tetap tersimpan.`);
+    } catch (error) {
+        console.error("Gagal menghapus dompet:", error);
+        showMessage(walletMessage, "Dompet gagal dihapus. Transaksi tidak sengaja dihapus; coba lagi.", true);
+        try {
+            await loadWallets();
+            await loadTransactions();
+        } catch (refreshError) {
+            console.error("Gagal memuat ulang setelah penghapusan dompet:", refreshError);
+        }
+    }
+}
+
 function renderWalletList() {
     walletList.replaceChildren();
 
@@ -207,6 +289,14 @@ function renderWalletList() {
         const item = document.createElement("div");
         item.className = "category-item wallet-item";
 
+        const identity = document.createElement("div");
+        identity.className = "wallet-identity";
+
+        const icon = document.createElement("span");
+        icon.className = "wallet-icon";
+        icon.setAttribute("aria-hidden", "true");
+        icon.textContent = walletIcon(wallet.name);
+
         const details = document.createElement("div");
         details.className = "wallet-item-details";
 
@@ -221,12 +311,30 @@ function renderWalletList() {
         totals.className = "wallet-totals";
         totals.textContent = `Masuk ${rupiah.format(income)} · Keluar ${rupiah.format(expense)}`;
 
-        const tag = document.createElement("small");
-        tag.className = "category-tag";
-        tag.textContent = "Dompet";
-
         details.append(name, balance, totals);
-        item.append(details, tag);
+        identity.append(icon, details);
+
+        const actions = document.createElement("div");
+        actions.className = "wallet-actions";
+
+        const renameButton = document.createElement("button");
+        renameButton.type = "button";
+        renameButton.className = "wallet-action-button";
+        renameButton.textContent = "✏️";
+        renameButton.title = `Ubah nama ${wallet.name}`;
+        renameButton.setAttribute("aria-label", `Ubah nama ${wallet.name}`);
+        renameButton.addEventListener("click", () => renameWallet(wallet));
+
+        const deleteButton = document.createElement("button");
+        deleteButton.type = "button";
+        deleteButton.className = "wallet-action-button wallet-delete-button";
+        deleteButton.textContent = "🗑️";
+        deleteButton.title = `Hapus ${wallet.name}`;
+        deleteButton.setAttribute("aria-label", `Hapus ${wallet.name}`);
+        deleteButton.addEventListener("click", () => deleteWallet(wallet));
+
+        actions.append(renameButton, deleteButton);
+        item.append(identity, actions);
         walletList.append(item);
     }
 }
@@ -438,13 +546,20 @@ function renderHomeWalletBalances() {
         const row = document.createElement("div");
         row.className = "home-wallet-balance-row";
 
+        const identity = document.createElement("span");
+        identity.className = "home-wallet-identity";
+        const icon = document.createElement("span");
+        icon.className = "wallet-icon home-wallet-icon";
+        icon.setAttribute("aria-hidden", "true");
+        icon.textContent = walletIcon(wallet.name);
         const name = document.createElement("span");
         name.textContent = wallet.name;
+        identity.append(icon, name);
 
         const balance = document.createElement("strong");
         balance.textContent = rupiah.format(income - expense);
 
-        row.append(name, balance);
+        row.append(identity, balance);
         list.append(row);
     }
 
