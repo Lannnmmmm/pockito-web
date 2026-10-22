@@ -282,17 +282,34 @@ async function loadTransactions() {
 
     if (error) throw error;
 
-    let totalIncome = 0;
-    let totalExpense = 0;
+    let lifetimeIncome = 0;
+    let lifetimeExpense = 0;
+    let monthlyIncome = 0;
+    let monthlyExpense = 0;
+    let monthlyTransactionCount = 0;
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    const monthLabel = new Intl.DateTimeFormat("id-ID", {
+        month: "long",
+        year: "numeric"
+    }).format(now);
+
+    document.getElementById("monthly-title").textContent =
+        monthLabel.charAt(0).toLocaleUpperCase("id-ID") + monthLabel.slice(1);
 
     for (const transaction of transactions) {
         const amount = Number(transaction.amount);
+        const isCurrentMonth = transaction.transaction_date?.startsWith(currentMonth);
 
         if (transaction.type === "income") {
-            totalIncome += amount;
+            lifetimeIncome += amount;
+            if (isCurrentMonth) monthlyIncome += amount;
         } else {
-            totalExpense += amount;
+            lifetimeExpense += amount;
+            if (isCurrentMonth) monthlyExpense += amount;
         }
+
+        if (isCurrentMonth) monthlyTransactionCount += 1;
 
         const item = document.createElement("div");
         item.className = "transaction-item";
@@ -334,13 +351,16 @@ async function loadTransactions() {
     }
 
     document.getElementById("total-income").textContent =
-        rupiah.format(totalIncome);
+        rupiah.format(monthlyIncome);
 
     document.getElementById("total-expense").textContent =
-        rupiah.format(totalExpense);
+        rupiah.format(monthlyExpense);
 
     document.getElementById("total-balance").textContent =
-        rupiah.format(totalIncome - totalExpense);
+        rupiah.format(lifetimeIncome - lifetimeExpense);
+
+    document.getElementById("monthly-transaction-count").textContent =
+        `${monthlyTransactionCount} transaksi`;
 
     if (transactions.length === 0) {
         const empty = document.createElement("p");
