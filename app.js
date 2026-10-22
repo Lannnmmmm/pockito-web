@@ -469,17 +469,116 @@ async function moveTargetFunds(target, kind) {
 }
 
 async function completeSavingsTarget(target) {
-    if (!window.confirm(`Tandai target "${target.name}" sebagai selesai? Riwayat dan sisa saldo akan tetap tersimpan.`)) return;
+    const targetMoves = cachedTargetMovements.filter((item) => item.target_id === target.id);
+    const alreadySpent = targetMoves.filter((item) => item.movement_type === "spend")
+        .reduce((sum, item) => sum + Number(item.amount), 0);
+    const saved = targetSavedBalance(target.id);
+    const costInput = window.prompt(
+        `Berapa total biaya aktual untuk "${target.name}"? Biaya yang sudah dicatat: ${rupiah.format(alreadySpent)}. Sisa dana yang belum digunakan boleh tetap tersimpan di target.`,
+        String(alreadySpent)
+    );
+    if (costInput === null) return;
+    const actualCost = Number(costInput);
+    if (!Number.isFinite(actualCost) || actualCost < 0) {
+        showMessage(document.getElementById("target-message"), "Biaya aktual harus nol atau lebih.", true);
+        return;
+    }
+    if (actualCost < alreadySpent) {
+        showMessage(document.getElementById("target-message"), "Biaya aktual tidak boleh lebih kecil dari pemakaian yang sudah dicatat. Periksa kembali nominalnya.", true);
+        return;
+    }
+
+    const additionalCost = actualCost - alreadySpent;
+    const fromTarget = Math.min(additionalCost, saved);
+    const fromWallet = additionalCost - fromTarget;
+    let wallet = null;
+    if (fromWallet > 0) {
+        if (currentWallets.length === 0) {
+            showMessage(document.getElementById("target-message"), "Biaya melebihi dana target. Buat dompet terlebih dahulu untuk mencatat selisihnya.", true);
+            return;
+        }
+        const choices = currentWallets.map((item, index) =>
+            `${index + 1}. ${item.name} — ${rupiah.format(walletRecordedBalance(item.id))}`
+        ).join("\n");
+        const selected = window.prompt(`Biaya aktual melebihi dana target sebesar ${rupiah.format(fromWallet)}. Pilih dompet untuk membayar selisih:\n${choices}`, "1");
+        if (selected === null) return;
+        const index = Number(selected) - 1;
+        if (!Number.isInteger(index) || index < 0 || index >= currentWallets.length) {
+            showMessage(document.getElementById("target-message"), "Pilihan dompet tidak valid.", true);
+            return;
+        }
+        wallet = currentWallets[index];
+        if (fromWallet > walletRecordedBalance(wallet.id)) {
+            showMessage(document.getElementById("target-message"), "Saldo dompet tidak cukup untuk membayar selisih biaya aktual.", true);
+            return;
+        }
+    }
+
+    if (!window.confirm(`Selesaikan "${target.name}" dengan biaya aktual ${rupiah.format(actualCost)}? Sisa dana ${rupiah.format(Math.max(0, saved - fromTarget))} akan tetap tercatat di target.`)) return;
+
+    const expenseCategory = currentCategories.find((item) => item.type === "expense" && item.name.toLocaleLowerCase("id-ID") === "lainnya")
+        || currentCategories.find((item) => item.type === "expense");
+    if (additionalCost > 0 && !expenseCategory) {
+        showMessage(document.getElementById("target-message"), "Tidak ada kategori pengeluaran untuk mencatat biaya target.", true);
+        return;
+    }
+
+    const insertedTransactionIds = [];
     try {
-        const { error } = await supabase.from("savings_targets")
+        const now = localDateTimeValues();
+        if (fromTarget > 0) {
+            const { data, error } = await supabase.from("transactions").insert({
+                user_id: currentUser.id,
+                wallet_id: null,
+                type: "expense",
+                category_id: expenseCategory.id,
+                amount: fromTarget,
+                description: `Biaya target: ${target.name}`,
+                transaction_date: now.date,
+                transaction_time: now.time
+            }).select("id").single();
+            if (error) throw error;
+            insertedTransactionIds.push(data.id);
+
+            const { error: movementError } = await supabase.from("savings_target_movements").insert({
+                user_id: currentUser.id,
+                target_id: target.id,
+                wallet_id: null,
+                movement_type: "spend",
+                amount: fromTarget,
+                description: `Biaya aktual target: ${target.name}`,
+                movement_date: now.date
+            });
+            if (movementError) throw movementError;
+        }
+
+        if (fromWallet > 0) {
+            const { data, error } = await supabase.from("transactions").insert({
+                user_id: currentUser.id,
+                wallet_id: wallet.id,
+                type: "expense",
+                category_id: expenseCategory.id,
+                amount: fromWallet,
+                description: `Selisih biaya target: ${target.name}`,
+                transaction_date: now.date,
+                transaction_time: now.time
+            }).select("id").single();
+            if (error) throw error;
+            insertedTransactionIds.push(data.id);
+        }
+
+        const { error: updateError } = await supabase.from("savings_targets")
             .update({ status: "completed", completed_at: new Date().toISOString() })
             .eq("id", target.id).eq("user_id", currentUser.id).eq("status", "active");
-        if (error) throw error;
+        if (updateError) throw updateError;
+
         await loadSavingsTargets();
-        showMessage(document.getElementById("target-message"), "Target selesai dan tersimpan di riwayat.");
+        await loadTransactions();
+        await loadWallets();
+        showMessage(document.getElementById("target-message"), "Target selesai. Biaya aktual tercatat sebagai pengeluaran dan riwayat target dipertahankan.");
     } catch (error) {
         console.error("Gagal menyelesaikan target:", error);
-        showMessage(document.getElementById("target-message"), "Target gagal diselesaikan.", true);
+        showMessage(document.getElementById("target-message"), "Penyelesaian target gagal. Periksa data sebelum mencoba lagi.", true);
     }
 }
 
