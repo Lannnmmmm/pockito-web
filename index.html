@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pockito — Catatan Keuangan</title>
-    <link rel="stylesheet" href="style.css?v=20261022-3">
+    <link rel="stylesheet" href="style.css?v=20261022-4">
 </head>
 <body>
     <main class="app">
@@ -16,21 +16,65 @@
             </div>
         </header>
 
-        <section id="login-section" class="panel">
-            <h2>Selamat datang!</h2>
-            <p>Masuk untuk melihat catatan keuanganmu.</p>
+        <section id="login-section" class="panel auth-panel">
+            <div class="auth-tabs" role="tablist" aria-label="Autentikasi">
+                <button type="button" class="auth-tab active" id="show-login" role="tab" aria-selected="true">Masuk</button>
+                <button type="button" class="auth-tab" id="show-signup" role="tab" aria-selected="false">Daftar</button>
+            </div>
 
-            <form id="login-form">
-                <label for="email">Email</label>
-                <input id="email" type="email" required
-                       placeholder="Email kamu">
+            <div id="login-view">
+                <h2>Selamat datang!</h2>
+                <p>Masuk untuk melihat catatan keuanganmu.</p>
+                <form id="login-form">
+                    <label for="email">Email</label>
+                    <input id="email" type="email" required placeholder="Email kamu" autocomplete="email">
 
-                <label for="password">Password</label>
-                <input id="password" type="password" required
-                       placeholder="Password" autocomplete="current-password">
+                    <label for="password">Password</label>
+                    <div class="password-field">
+                        <input id="password" type="password" required placeholder="Password" autocomplete="current-password">
+                        <button type="button" class="password-toggle" data-password-target="password" aria-label="Tampilkan password"><span aria-hidden="true">◉</span></button>
+                    </div>
+                    <button type="button" class="text-action" id="forgot-password">Lupa password?</button>
+                    <button type="submit">Masuk</button>
+                    <p id="login-message" role="status" aria-live="polite"></p>
+                </form>
+            </div>
 
-                <button type="submit">Masuk</button>
-                <p id="login-message" role="status"></p>
+            <div id="signup-view" hidden>
+                <h2>Buat akun Pockito</h2>
+                <p>Mulai catat pemasukan dan pengeluaranmu.</p>
+                <form id="signup-form">
+                    <label for="signup-email">Email</label>
+                    <input id="signup-email" type="email" required placeholder="Email aktif kamu" autocomplete="email">
+
+                    <label for="signup-password">Password</label>
+                    <div class="password-field">
+                        <input id="signup-password" type="password" required minlength="8" placeholder="Minimal 8 karakter" autocomplete="new-password">
+                        <button type="button" class="password-toggle" data-password-target="signup-password" aria-label="Tampilkan password"><span aria-hidden="true">◉</span></button>
+                    </div>
+
+                    <label for="signup-confirm-password">Konfirmasi password</label>
+                    <input id="signup-confirm-password" type="password" required minlength="8" placeholder="Ulangi password" autocomplete="new-password">
+
+                    <button type="submit">Buat akun</button>
+                    <p id="signup-message" role="status" aria-live="polite"></p>
+                </form>
+            </div>
+        </section>
+
+        <section id="recovery-section" class="panel auth-panel" hidden>
+            <h2>Atur password baru</h2>
+            <p>Buat password baru untuk akun Pockito-mu.</p>
+            <form id="recovery-form">
+                <label for="recovery-password">Password baru</label>
+                <div class="password-field">
+                    <input id="recovery-password" type="password" required minlength="8" placeholder="Minimal 8 karakter" autocomplete="new-password">
+                    <button type="button" class="password-toggle" data-password-target="recovery-password" aria-label="Tampilkan password"><span aria-hidden="true">◉</span></button>
+                </div>
+                <label for="recovery-confirm-password">Konfirmasi password baru</label>
+                <input id="recovery-confirm-password" type="password" required minlength="8" placeholder="Ulangi password baru" autocomplete="new-password">
+                <button type="submit">Simpan password baru</button>
+                <p id="recovery-message" role="status" aria-live="polite"></p>
             </form>
         </section>
 
@@ -142,6 +186,6 @@
         </section>
     </main>
 
-    <script type="module" src="app.js?v=20261022-3"></script>
+    <script type="module" src="app.js?v=20261022-4"></script>
 </body>
 </html>
