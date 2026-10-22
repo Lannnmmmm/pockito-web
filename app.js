@@ -5,6 +5,8 @@ import {
     SUPABASE_PUBLISHABLE_KEY
 } from "./config.js";
 
+const APP_URL = "https://lannnmmmm.github.io/pockito-web/";
+
 const supabase = createClient(
     SUPABASE_URL,
     SUPABASE_PUBLISHABLE_KEY
@@ -438,7 +440,7 @@ signupForm.addEventListener("submit", async (event) => {
         const { data, error } = await supabase.auth.signUp({
             email,
             password,
-            options: { emailRedirectTo: window.location.href.split("#")[0] }
+            options: { emailRedirectTo: APP_URL }
         });
         if (error) throw error;
 
@@ -479,7 +481,7 @@ document.getElementById("forgot-password").addEventListener("click", async () =>
 
     try {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: window.location.href.split("#")[0]
+            redirectTo: APP_URL
         });
         if (error) throw error;
         showMessage(loginMessage, "Jika email terdaftar, tautan pemulihan akan dikirim. Periksa kotak masuk dan folder spam.");
