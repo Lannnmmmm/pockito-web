@@ -64,6 +64,14 @@
                         <option value="">Memuat kategori...</option>
                     </select>
 
+                    <label for="new-category-name">Buat kategori sendiri</label>
+                    <div class="category-create">
+                        <input id="new-category-name" type="text" maxlength="50"
+                               placeholder="Contoh: Nabung Nikah">
+                        <button id="add-category-button" type="button">Tambah</button>
+                    </div>
+                    <small class="field-hint">Kategori dibuat untuk jenis transaksi yang sedang dipilih.</small>
+
                     <label for="transaction-amount">Nominal (Rp)</label>
                     <input id="transaction-amount" type="number"
                            min="1" step="1" required placeholder="Contoh: 25000">
