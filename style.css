@@ -75,7 +75,7 @@ h1 {
     top: 10px;
     z-index: 5;
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 6px;
     margin-bottom: 20px;
     padding: 6px;
@@ -817,5 +817,112 @@ button:disabled {
     select,
     button {
         transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+    }
+}
+
+
+/* Monthly transaction history */
+.history-month-navigation {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+    align-items: center;
+    gap: 10px;
+    margin: 20px 0 14px;
+}
+
+.history-month-navigation h3 {
+    margin: 0;
+    text-align: center;
+    font-size: 16px;
+}
+
+.month-nav-button {
+    min-height: 42px;
+    padding: 6px;
+    color: var(--text);
+    background: var(--background);
+    border: 1px solid var(--border);
+    font-size: 25px;
+    line-height: 1;
+}
+
+.month-nav-button:hover {
+    color: var(--text);
+    background: var(--border);
+}
+
+.month-nav-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.35;
+}
+
+.history-summary {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.history-summary > div {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 5px;
+    padding: 14px;
+    background: var(--background);
+    border-radius: 13px;
+}
+
+.history-summary > div:first-child strong {
+    color: var(--income);
+}
+
+.history-summary > div:last-child strong {
+    color: var(--expense);
+}
+
+.history-summary span {
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.history-summary strong {
+    overflow-wrap: anywhere;
+    font-size: clamp(14px, 3.4vw, 18px);
+}
+
+.history-count {
+    margin: 0 0 8px;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+:root[data-theme="dark"] .history-summary > div {
+    background: #2a312c;
+}
+
+:root[data-theme="dark"] .month-nav-button {
+    color: var(--text);
+    background: #252c27;
+    border-color: var(--border);
+}
+
+:root[data-theme="dark"] .month-nav-button:hover {
+    background: #303832;
+}
+
+@media (max-width: 480px) {
+    .app-nav {
+        gap: 4px;
+        padding: 5px;
+    }
+
+    .nav-tab {
+        padding-inline: 4px;
+        font-size: 12px;
+    }
+
+    .history-summary > div {
+        padding: 11px;
     }
 }
