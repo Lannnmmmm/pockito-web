@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pockito — Catatan Keuangan</title>
-    <link rel="stylesheet" href="style.css?v=20261022-6">
+    <link rel="stylesheet" href="style.css?v=20261022-7">
 </head>
 <body>
     <main class="app">
@@ -35,7 +35,6 @@
                         <button type="button" class="password-toggle" data-password-target="password" aria-label="Tampilkan password"><span aria-hidden="true">◉</span></button>
                     </div>
                     <button type="button" class="text-action" id="forgot-password">Lupa password?</button>
-                    <button type="button" class="text-action" id="resend-verification">Kirim ulang email verifikasi</button>
                     <button type="submit">Masuk</button>
                     <p id="login-message" role="status" aria-live="polite"></p>
                 </form>
@@ -59,6 +58,10 @@
 
                     <button type="submit">Buat akun</button>
                     <p id="signup-message" role="status" aria-live="polite"></p>
+                    <div class="verification-help">
+                        <p>Sudah daftar, tetapi belum menerima email?</p>
+                        <button type="button" class="text-action" id="resend-verification">Kirim ulang email verifikasi</button>
+                    </div>
                 </form>
             </div>
         </section>
@@ -187,6 +190,6 @@
         </section>
     </main>
 
-    <script type="module" src="app.js?v=20261022-6"></script>
+    <script type="module" src="app.js?v=20261022-7"></script>
 </body>
 </html>
