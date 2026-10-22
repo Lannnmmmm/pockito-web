@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pockito — Catatan Keuangan</title>
-    <link rel="stylesheet" href="style.css?v=20261022-10">
+    <link rel="stylesheet" href="style.css?v=20261022-11">
 </head>
 <body>
     <main class="app">
@@ -91,6 +91,7 @@
                 <button type="button" class="nav-tab active" data-view-target="home" aria-current="page">Beranda</button>
                 <button type="button" class="nav-tab" data-view-target="input" aria-current="false">Input</button>
                 <button type="button" class="nav-tab" data-view-target="history" aria-current="false">Riwayat</button>
+                <button type="button" class="nav-tab" data-view-target="wallets" aria-current="false">Dompet</button>
                 <button type="button" class="nav-tab" data-view-target="categories" aria-current="false">Kategori</button>
             </nav>
 
@@ -155,6 +156,10 @@
                                     <option value="income">Pemasukan</option>
                                 </select>
                             </div>
+                            <div class="form-field" id="transaction-wallet-field" hidden>
+                                <label for="transaction-wallet">Dompet</label>
+                                <select id="transaction-wallet"></select>
+                            </div>
                             <div class="form-field">
                                 <label for="transaction-category">Kategori</label>
                                 <select id="transaction-category" required>
@@ -201,6 +206,24 @@
                 </div>
             </section>
 
+            <section data-view="wallets" hidden>
+                <div class="panel">
+                    <p class="section-kicker">PENGATURAN PERSONAL</p>
+                    <h2>Kelola dompet</h2>
+                    <p class="panel-description">Dompet bersifat opsional. Tanpa dompet, kamu tetap bisa mencatat transaksi seperti biasa.</p>
+                    <form id="wallet-form">
+                        <label for="wallet-name">Nama dompet baru</label>
+                        <input id="wallet-name" type="text" maxlength="60" required placeholder="Contoh: BRI, SeaBank, Tunai">
+                        <button type="submit">+ Tambah dompet</button>
+                        <p id="wallet-message" role="status"></p>
+                    </form>
+                </div>
+                <div class="panel">
+                    <h2>Dompet milikmu</h2>
+                    <div id="wallet-list"></div>
+                </div>
+            </section>
+
             <section data-view="categories" hidden>
                 <div class="panel">
                     <p class="section-kicker">PENGATURAN PERSONAL</p>
@@ -231,6 +254,6 @@
         </section>
     </main>
 
-    <script type="module" src="app.js?v=20261022-10"></script>
+    <script type="module" src="app.js?v=20261022-11"></script>
 </body>
 </html>
