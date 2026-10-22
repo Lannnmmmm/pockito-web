@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pockito — Catatan Keuangan</title>
-    <link rel="stylesheet" href="style.css?v=20261022-13">
+    <link rel="stylesheet" href="style.css?v=20261022-15">
 </head>
 <body>
     <main class="app">
@@ -91,6 +91,7 @@
                 <button type="button" class="nav-tab active" data-view-target="home" aria-current="page">Beranda</button>
                 <button type="button" class="nav-tab" data-view-target="input" aria-current="false">Input</button>
                 <button type="button" class="nav-tab" data-view-target="history" aria-current="false">Riwayat</button>
+                <button type="button" class="nav-tab" data-view-target="reports" aria-current="false">Laporan</button>
                 <button type="button" class="nav-tab" data-view-target="wallets" aria-current="false">Dompet</button>
                 <button type="button" class="nav-tab" data-view-target="categories" aria-current="false">Kategori</button>
             </nav>
@@ -207,6 +208,48 @@
                     </div>
                     <p id="history-transaction-count" class="history-count">0 transaksi</p>
                     <div id="transaction-list"></div>
+                </div>
+            </section>
+
+            <section data-view="reports" hidden>
+                <div class="panel">
+                    <p class="section-kicker">ANALISIS KEUANGAN</p>
+                    <h2>Laporan bulanan</h2>
+                    <p class="panel-description">Ringkasan dihitung dari transaksi yang kamu catat.</p>
+                    <div class="history-month-navigation">
+                        <button type="button" id="report-prev-month" class="month-nav-button" aria-label="Bulan sebelumnya">‹</button>
+                        <h3 id="report-month-label">Bulan ini</h3>
+                        <button type="button" id="report-next-month" class="month-nav-button" aria-label="Bulan berikutnya">›</button>
+                    </div>
+                    <div class="report-metric-grid">
+                        <div class="report-metric report-income">
+                            <span>Total pemasukan</span>
+                            <strong id="report-income">Rp0</strong>
+                        </div>
+                        <div class="report-metric report-expense">
+                            <span>Total pengeluaran</span>
+                            <strong id="report-expense">Rp0</strong>
+                        </div>
+                        <div class="report-metric report-remaining">
+                            <span>Selisih bulan ini</span>
+                            <strong id="report-remaining">Rp0</strong>
+                        </div>
+                        <div class="report-metric">
+                            <span>Pemasukan terpakai</span>
+                            <strong id="report-spent-percent">0%</strong>
+                        </div>
+                    </div>
+                    <p id="report-insight" class="report-insight">Belum ada transaksi pada periode ini.</p>
+                </div>
+                <div class="panel">
+                    <h2>Rincian pemasukan</h2>
+                    <p class="panel-description">Dari kategori pemasukan yang tercatat pada bulan terpilih.</p>
+                    <div id="report-income-breakdown"></div>
+                </div>
+                <div class="panel">
+                    <h2>Rincian pengeluaran</h2>
+                    <p class="panel-description">Lihat kategori yang paling banyak menggunakan uangmu.</p>
+                    <div id="report-expense-breakdown"></div>
                 </div>
             </section>
 
