@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pockito — Catatan Keuangan</title>
-    <link rel="stylesheet" href="style.css?v=20261022-2">
+    <link rel="stylesheet" href="style.css?v=20261022-3">
 </head>
 <body>
     <main class="app">
@@ -68,27 +68,39 @@
                 <div class="panel">
                     <h2>Tambah transaksi</h2>
                     <form id="transaction-form">
-                        <label for="transaction-type">Jenis transaksi</label>
-                        <select id="transaction-type" required>
-                            <option value="expense">Pengeluaran</option>
-                            <option value="income">Pemasukan</option>
-                        </select>
-
-                        <label for="transaction-category">Kategori</label>
-                        <select id="transaction-category" required>
-                            <option value="">Memuat kategori...</option>
-                        </select>
-
-                        <label for="transaction-amount">Nominal (Rp)</label>
-                        <input id="transaction-amount" type="number"
-                               min="1" step="1" required placeholder="Contoh: 25000">
-
-                        <label for="transaction-description">Keterangan</label>
-                        <input id="transaction-description" type="text"
-                               maxlength="200" placeholder="Contoh: Makan siang">
-
-                        <label for="transaction-date">Tanggal</label>
-                        <input id="transaction-date" type="date" required>
+                        <div class="form-grid">
+                            <div class="form-field">
+                                <label for="transaction-date">Tanggal</label>
+                                <input id="transaction-date" type="date" required>
+                            </div>
+                            <div class="form-field">
+                                <label for="transaction-time">Waktu</label>
+                                <input id="transaction-time" type="time" step="1" required>
+                            </div>
+                            <div class="form-field">
+                                <label for="transaction-type">Jenis transaksi</label>
+                                <select id="transaction-type" required>
+                                    <option value="expense">Pengeluaran</option>
+                                    <option value="income">Pemasukan</option>
+                                </select>
+                            </div>
+                            <div class="form-field">
+                                <label for="transaction-category">Kategori</label>
+                                <select id="transaction-category" required>
+                                    <option value="">Memuat kategori...</option>
+                                </select>
+                            </div>
+                            <div class="form-field">
+                                <label for="transaction-amount">Nominal (Rp)</label>
+                                <input id="transaction-amount" type="number"
+                                       min="1" step="1" required placeholder="Contoh: 25000">
+                            </div>
+                            <div class="form-field">
+                                <label for="transaction-description">Keterangan</label>
+                                <input id="transaction-description" type="text"
+                                       maxlength="200" placeholder="Contoh: Makan siang">
+                            </div>
+                        </div>
 
                         <button type="submit">Simpan transaksi</button>
                         <p id="transaction-message" role="status"></p>
@@ -130,6 +142,6 @@
         </section>
     </main>
 
-    <script type="module" src="app.js?v=20261022-2"></script>
+    <script type="module" src="app.js?v=20261022-3"></script>
 </body>
 </html>
