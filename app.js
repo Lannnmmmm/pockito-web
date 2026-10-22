@@ -524,6 +524,7 @@ async function completeSavingsTarget(target) {
     }
 
     const insertedTransactionIds = [];
+    const insertedMovementIds = [];
     try {
         const now = localDateTimeValues();
         if (fromTarget > 0) {
@@ -540,7 +541,7 @@ async function completeSavingsTarget(target) {
             if (error) throw error;
             insertedTransactionIds.push(data.id);
 
-            const { error: movementError } = await supabase.from("savings_target_movements").insert({
+            const { data: movement, error: movementError } = await supabase.from("savings_target_movements").insert({
                 user_id: currentUser.id,
                 target_id: target.id,
                 wallet_id: null,
@@ -548,8 +549,9 @@ async function completeSavingsTarget(target) {
                 amount: fromTarget,
                 description: `Biaya aktual target: ${target.name}`,
                 movement_date: now.date
-            });
+            }).select("id").single();
             if (movementError) throw movementError;
+            insertedMovementIds.push(movement.id);
         }
 
         if (fromWallet > 0) {
@@ -578,6 +580,16 @@ async function completeSavingsTarget(target) {
         showMessage(document.getElementById("target-message"), "Target selesai. Biaya aktual tercatat sebagai pengeluaran dan riwayat target dipertahankan.");
     } catch (error) {
         console.error("Gagal menyelesaikan target:", error);
+        if (insertedMovementIds.length > 0) {
+            const { error: rollbackMovementError } = await supabase.from("savings_target_movements")
+                .delete().in("id", insertedMovementIds).eq("user_id", currentUser.id);
+            if (rollbackMovementError) console.error("Rollback pergerakan target gagal:", rollbackMovementError);
+        }
+        if (insertedTransactionIds.length > 0) {
+            const { error: rollbackTransactionError } = await supabase.from("transactions")
+                .delete().in("id", insertedTransactionIds).eq("user_id", currentUser.id);
+            if (rollbackTransactionError) console.error("Rollback transaksi target gagal:", rollbackTransactionError);
+        }
         showMessage(document.getElementById("target-message"), "Penyelesaian target gagal. Periksa data sebelum mencoba lagi.", true);
     }
 }
