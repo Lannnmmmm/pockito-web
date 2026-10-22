@@ -613,3 +613,209 @@ button:disabled {
         font-size: 11px;
     }
 }
+
+
+/* Theme toggle and comfortable dark theme */
+.app-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.brand-copy {
+    min-width: 0;
+}
+
+.theme-toggle {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 40px;
+    margin-top: 4px;
+    padding: 9px 13px;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-size: 13px;
+    box-shadow: 0 3px 12px rgb(25 35 25 / 5%);
+}
+
+.theme-toggle:hover {
+    color: var(--text);
+    background: var(--background);
+}
+
+.theme-toggle-icon {
+    font-size: 17px;
+    line-height: 1;
+}
+
+:root[data-theme="dark"] {
+    color-scheme: dark;
+    --primary: #91b59a;
+    --primary-dark: #b4d2ba;
+    --background: #171b19;
+    --surface: #222825;
+    --text: #e5e9e5;
+    --muted: #a2ada5;
+    --border: #38413b;
+    --income: #8fcca1;
+    --expense: #e99a90;
+}
+
+:root[data-theme="dark"] body {
+    background: var(--background);
+    color: var(--text);
+}
+
+:root[data-theme="dark"] .panel {
+    box-shadow: 0 6px 22px rgb(0 0 0 / 14%);
+}
+
+:root[data-theme="dark"] .app-nav {
+    background: rgb(34 40 37 / 94%);
+    border-color: var(--border);
+    box-shadow: 0 5px 20px rgb(0 0 0 / 18%);
+}
+
+:root[data-theme="dark"] .nav-tab:hover,
+:root[data-theme="dark"] .auth-tab:hover {
+    color: var(--text);
+    background: #303832;
+}
+
+:root[data-theme="dark"] .nav-tab.active,
+:root[data-theme="dark"] .auth-tab.active {
+    color: #18221b;
+    background: var(--primary);
+}
+
+:root[data-theme="dark"] .balance-panel {
+    background: linear-gradient(145deg, #252d28, #202a23);
+}
+
+:root[data-theme="dark"] .secondary-action {
+    color: #c7ddcb;
+    background: #303d33;
+}
+
+:root[data-theme="dark"] .secondary-action:hover {
+    color: #172019;
+    background: var(--primary);
+}
+
+:root[data-theme="dark"] input,
+:root[data-theme="dark"] select {
+    color: var(--text);
+    background: #1b211d;
+    border-color: var(--border);
+}
+
+:root[data-theme="dark"] input::placeholder {
+    color: #7f8b82;
+}
+
+:root[data-theme="dark"] .summary > div,
+:root[data-theme="dark"] .auth-tabs {
+    background: #2a312c;
+}
+
+:root[data-theme="dark"] .monthly-panel .summary > div:first-child {
+    background: #293a2e;
+}
+
+:root[data-theme="dark"] .monthly-panel .summary > div:last-child {
+    background: #3a2d2b;
+}
+
+:root[data-theme="dark"] .monthly-count,
+:root[data-theme="dark"] .category-tag {
+    color: #c6dfcb;
+    background: #303d33;
+}
+
+:root[data-theme="dark"] #logout-button {
+    color: var(--text);
+    background: #343a35;
+}
+
+:root[data-theme="dark"] #logout-button:hover {
+    background: #414941;
+}
+
+:root[data-theme="dark"] .password-toggle {
+    color: var(--text);
+    background: #2a312c;
+}
+
+:root[data-theme="dark"] .password-toggle:hover {
+    color: #172019;
+    background: var(--primary);
+}
+
+:root[data-theme="dark"] .theme-toggle {
+    color: var(--text);
+    background: #252c27;
+    border-color: var(--border);
+}
+
+:root[data-theme="dark"] .theme-toggle:hover {
+    background: #303832;
+}
+
+:root[data-theme="dark"] .text-action {
+    color: #b9d8c0;
+}
+
+:root[data-theme="dark"] .text-action:hover {
+    color: #d7e9db;
+}
+
+:root[data-theme="dark"] .section-kicker,
+:root[data-theme="dark"] .eyebrow {
+    color: #a5c9ad;
+}
+
+:root[data-theme="dark"] #total-balance {
+    color: #c5dfca;
+}
+
+:root[data-theme="dark"] .income {
+    color: var(--income);
+}
+
+:root[data-theme="dark"] .expense {
+    color: var(--expense);
+}
+
+@media (max-width: 480px) {
+    .app-header {
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .theme-toggle {
+        gap: 6px;
+        padding: 8px 10px;
+        font-size: 12px;
+    }
+
+    .theme-toggle-label {
+        max-width: 74px;
+    }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    body,
+    .panel,
+    .app-nav,
+    input,
+    select,
+    button {
+        transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+    }
+}
