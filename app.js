@@ -17,6 +17,8 @@ const transactionForm = document.getElementById("transaction-form");
 const loginMessage = document.getElementById("login-message");
 const transactionMessage = document.getElementById("transaction-message");
 const transactionList = document.getElementById("transaction-list");
+const transactionType = document.getElementById("transaction-type");
+const transactionCategory = document.getElementById("transaction-category");
 
 const rupiah = new Intl.NumberFormat("id-ID", {
     style: "currency",
@@ -26,6 +28,7 @@ const rupiah = new Intl.NumberFormat("id-ID", {
 
 let currentUser = null;
 let currentWallet = null;
+let currentCategories = [];
 
 function todayLocal() {
     const now = new Date();
@@ -82,12 +85,86 @@ async function getOrCreateWallet() {
     currentWallet = wallet;
 }
 
+const defaultCategories = [
+    { name: "Makan", type: "expense" },
+    { name: "Bensin", type: "expense" },
+    { name: "Tagihan", type: "expense" },
+    { name: "Belanja", type: "expense" },
+    { name: "Lainnya", type: "expense" },
+    { name: "Gaji", type: "income" },
+    { name: "Bonus", type: "income" },
+    { name: "Usaha", type: "income" },
+    { name: "Lainnya", type: "income" }
+];
+
+async function loadCategories() {
+    const { data: categories, error } = await supabase
+        .from("categories")
+        .select("id, name, type")
+        .eq("user_id", currentUser.id)
+        .order("name", { ascending: true });
+
+    if (error) throw error;
+
+    const existingKeys = new Set(
+        categories.map((category) => `${category.type}:${category.name.toLowerCase()}`)
+    );
+    const missingCategories = defaultCategories
+        .filter((category) => !existingKeys.has(`${category.type}:${category.name.toLowerCase()}`))
+        .map((category) => ({
+            ...category,
+            user_id: currentUser.id
+        }));
+
+    if (missingCategories.length > 0) {
+        const { error: insertError } = await supabase
+            .from("categories")
+            .insert(missingCategories);
+
+        if (insertError) throw insertError;
+    }
+
+    const { data: refreshedCategories, error: refreshError } = await supabase
+        .from("categories")
+        .select("id, name, type")
+        .eq("user_id", currentUser.id)
+        .order("name", { ascending: true });
+
+    if (refreshError) throw refreshError;
+
+    currentCategories = refreshedCategories;
+    renderCategoryOptions();
+}
+
+function renderCategoryOptions() {
+    const selectedType = transactionType.value;
+    const previousValue = transactionCategory.value;
+
+    transactionCategory.replaceChildren();
+
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "Pilih kategori";
+    transactionCategory.append(placeholder);
+
+    for (const category of currentCategories.filter((item) => item.type === selectedType)) {
+        const option = document.createElement("option");
+        option.value = category.id;
+        option.textContent = category.name;
+        transactionCategory.append(option);
+    }
+
+    if ([...transactionCategory.options].some((option) => option.value === previousValue)) {
+        transactionCategory.value = previousValue;
+    }
+}
+
 async function loadTransactions() {
     transactionList.replaceChildren();
 
     const { data: transactions, error } = await supabase
         .from("transactions")
-        .select("id, type, amount, description, transaction_date")
+        .select("id, type, amount, description, transaction_date, category_id")
         .eq("user_id", currentUser.id)
         .order("transaction_date", { ascending: false })
         .order("created_at", { ascending: false });
@@ -120,6 +197,10 @@ async function loadTransactions() {
                     : "Pengeluaran"
             );
 
+        const category = currentCategories.find((item) => item.id === transaction.category_id);
+        const categoryLabel = document.createElement("small");
+        categoryLabel.textContent = category ? category.name : "Tanpa kategori";
+
         const date = document.createElement("small");
         date.textContent = transaction.transaction_date;
 
@@ -131,7 +212,7 @@ async function loadTransactions() {
         const sign = transaction.type === "income" ? "+" : "−";
         value.textContent = `${sign}${rupiah.format(amount)}`;
 
-        info.append(description, date);
+        info.append(description, categoryLabel, date);
         item.append(info, value);
         transactionList.append(item);
     }
@@ -159,6 +240,7 @@ async function openUserSession(user) {
 
     try {
         await getOrCreateWallet();
+        await loadCategories();
         await loadTransactions();
         showDashboard();
     } catch (error) {
@@ -211,7 +293,8 @@ transactionForm.addEventListener("submit", async (event) => {
         return;
     }
 
-    const type = document.getElementById("transaction-type").value;
+    const type = transactionType.value;
+    const categoryId = transactionCategory.value;
     const amount = Number(
         document.getElementById("transaction-amount").value
     );
@@ -223,8 +306,8 @@ transactionForm.addEventListener("submit", async (event) => {
         'button[type="submit"]'
     );
 
-    if (!Number.isFinite(amount) || amount <= 0 || !transactionDate) {
-        showMessage(transactionMessage, "Periksa nominal dan tanggal transaksi.", true);
+    if (!Number.isFinite(amount) || amount <= 0 || !transactionDate || !categoryId) {
+        showMessage(transactionMessage, "Periksa nominal, kategori, dan tanggal transaksi.", true);
         return;
     }
 
@@ -238,6 +321,7 @@ transactionForm.addEventListener("submit", async (event) => {
                 user_id: currentUser.id,
                 wallet_id: currentWallet.id,
                 type,
+                category_id: categoryId,
                 amount,
                 description: description || null,
                 transaction_date: transactionDate
@@ -246,6 +330,7 @@ transactionForm.addEventListener("submit", async (event) => {
         if (error) throw error;
 
         transactionForm.reset();
+        renderCategoryOptions();
         document.getElementById("transaction-date").value = todayLocal();
         await loadTransactions();
 
@@ -273,6 +358,7 @@ document.getElementById("logout-button").addEventListener("click", async () => {
 
     currentUser = null;
     currentWallet = null;
+    currentCategories = [];
     loginForm.reset();
     transactionForm.reset();
     showLogin();
@@ -295,5 +381,7 @@ async function initializeApp() {
         showMessage(loginMessage, "");
     }
 }
+
+transactionType.addEventListener("change", renderCategoryOptions);
 
 initializeApp();
