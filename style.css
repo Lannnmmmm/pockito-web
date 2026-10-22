@@ -926,3 +926,27 @@ button:disabled {
         padding: 11px;
     }
 }
+
+
+/* Per-wallet transaction totals */
+.wallet-item-details {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.wallet-balance {
+    color: var(--primary-dark);
+    font-size: 17px;
+}
+
+.wallet-totals {
+    color: var(--muted);
+    font-size: 12px;
+    overflow-wrap: anywhere;
+}
+
+:root[data-theme="dark"] .wallet-balance {
+    color: #c5dfca;
+}
