@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pockito — Catatan Keuangan</title>
-    <link rel="stylesheet" href="style.css?v=20261022-12">
+    <link rel="stylesheet" href="style.css?v=20261022-13">
 </head>
 <body>
     <main class="app">
@@ -101,6 +101,10 @@
                     <p>Saldo saat ini</p>
                     <h2 id="total-balance">Rp0</h2>
                     <p class="balance-caption">Akumulasi dari seluruh transaksi yang tercatat</p>
+                    <div id="home-wallet-balances" class="home-wallet-balances" hidden>
+                        <p class="wallet-balance-heading">Saldo tiap dompet</p>
+                        <div id="home-wallet-balance-list"></div>
+                    </div>
                     <button type="button" class="secondary-action" data-view-target="input">+ Catat transaksi</button>
                 </div>
                 <div class="panel monthly-panel">
@@ -254,6 +258,6 @@
         </section>
     </main>
 
-    <script type="module" src="app.js?v=20261022-12"></script>
+    <script type="module" src="app.js?v=20261022-13"></script>
 </body>
 </html>
