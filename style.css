@@ -492,6 +492,26 @@ button:active {
     text-decoration: underline;
 }
 
+.verification-help {
+    margin-top: 22px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    text-align: center;
+}
+
+.verification-help p {
+    margin: 0 0 7px;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.verification-help .text-action {
+    display: inline-block;
+    margin: 0;
+    align-self: auto;
+    text-align: center;
+}
+
 .auth-panel [role="status"] {
     min-height: 1.4em;
     margin: 4px 0 0;
