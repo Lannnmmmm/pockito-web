@@ -539,3 +539,77 @@ button:disabled {
 .app.auth-mode .subtitle {
     margin-top: 8px;
 }
+
+
+/* Dashboard refinement */
+.balance-caption {
+    margin: 6px 0 0;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.monthly-panel {
+    padding-bottom: 20px;
+}
+
+.monthly-heading,
+.recent-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.monthly-heading h2,
+.recent-heading h2 {
+    margin-bottom: 0;
+}
+
+.monthly-heading .section-kicker,
+.recent-heading .section-kicker {
+    margin-bottom: 4px;
+}
+
+.monthly-count {
+    flex-shrink: 0;
+    padding: 6px 10px;
+    color: var(--primary-dark);
+    background: #edf2eb;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.monthly-panel .summary {
+    margin-top: 18px;
+}
+
+.monthly-panel .summary > div:first-child {
+    background: #edf5ee;
+}
+
+.monthly-panel .summary > div:last-child {
+    background: #fbefed;
+}
+
+.recent-view-all {
+    flex-shrink: 0;
+    margin: 0;
+    align-self: auto;
+    white-space: nowrap;
+}
+
+.recent-panel #home-transaction-list {
+    margin-top: 10px;
+}
+
+@media (max-width: 380px) {
+    .monthly-heading,
+    .recent-heading {
+        align-items: flex-start;
+    }
+
+    .monthly-count {
+        font-size: 11px;
+    }
+}
