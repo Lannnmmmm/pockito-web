@@ -13,6 +13,13 @@ const supabase = createClient(
 const loginSection = document.getElementById("login-section");
 const dashboardSection = document.getElementById("dashboard-section");
 const loginForm = document.getElementById("login-form");
+const signupForm = document.getElementById("signup-form");
+const recoveryForm = document.getElementById("recovery-form");
+const recoverySection = document.getElementById("recovery-section");
+const loginView = document.getElementById("login-view");
+const signupView = document.getElementById("signup-view");
+const loginTabButton = document.getElementById("show-login");
+const signupTabButton = document.getElementById("show-signup");
 const transactionForm = document.getElementById("transaction-form");
 const loginMessage = document.getElementById("login-message");
 const transactionMessage = document.getElementById("transaction-message");
@@ -73,7 +80,28 @@ function showLogin() {
 
 function showDashboard() {
     loginSection.hidden = true;
+    recoverySection.hidden = true;
     dashboardSection.hidden = false;
+}
+
+function showAuthView(view) {
+    recoverySection.hidden = true;
+    loginSection.hidden = false;
+    dashboardSection.hidden = true;
+    loginView.hidden = view !== "login";
+    signupView.hidden = view !== "signup";
+    loginTabButton.classList.toggle("active", view === "login");
+    signupTabButton.classList.toggle("active", view === "signup");
+    loginTabButton.setAttribute("aria-selected", String(view === "login"));
+    signupTabButton.setAttribute("aria-selected", String(view === "signup"));
+    showMessage(loginMessage, "");
+    showMessage(document.getElementById("signup-message"), "");
+}
+
+function showPasswordRecovery() {
+    loginSection.hidden = true;
+    dashboardSection.hidden = true;
+    recoverySection.hidden = false;
 }
 
 async function getOrCreateWallet() {
@@ -371,6 +399,133 @@ loginForm.addEventListener("submit", async (event) => {
     }
 });
 
+loginTabButton.addEventListener("click", () => showAuthView("login"));
+signupTabButton.addEventListener("click", () => showAuthView("signup"));
+
+document.querySelectorAll("[data-password-target]").forEach((button) => {
+    button.addEventListener("click", () => {
+        const input = document.getElementById(button.dataset.passwordTarget);
+        const willShow = input.type === "password";
+        input.type = willShow ? "text" : "password";
+        button.setAttribute("aria-label", willShow ? "Sembunyikan password" : "Tampilkan password");
+    });
+});
+
+signupForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const email = document.getElementById("signup-email").value.trim();
+    const password = document.getElementById("signup-password").value;
+    const confirmation = document.getElementById("signup-confirm-password").value;
+    const submitButton = signupForm.querySelector('button[type="submit"]');
+
+    if (password.length < 8) {
+        showMessage(document.getElementById("signup-message"), "Password minimal 8 karakter.", true);
+        return;
+    }
+    if (password !== confirmation) {
+        showMessage(document.getElementById("signup-message"), "Konfirmasi password belum cocok.", true);
+        return;
+    }
+
+    submitButton.disabled = true;
+    showMessage(document.getElementById("signup-message"), "Membuat akun...");
+
+    try {
+        const { data, error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: { emailRedirectTo: window.location.href.split("#")[0] }
+        });
+        if (error) throw error;
+
+        if (data.session && data.user) {
+            await openUserSession(data.user);
+        } else {
+            signupForm.reset();
+            showMessage(
+                document.getElementById("signup-message"),
+                "Akun berhasil dibuat. Periksa email untuk verifikasi, lalu masuk ke Pockito."
+            );
+        }
+    } catch (error) {
+        console.error("Pendaftaran gagal:", error);
+        showMessage(
+            document.getElementById("signup-message"),
+            error.message?.toLowerCase().includes("already registered")
+                ? "Email ini sudah terdaftar. Silakan masuk atau gunakan fitur lupa password."
+                : (error.message || "Pendaftaran gagal. Periksa email dan coba lagi."),
+            true
+        );
+    } finally {
+        submitButton.disabled = false;
+    }
+});
+
+document.getElementById("forgot-password").addEventListener("click", async () => {
+    const email = document.getElementById("email").value.trim();
+    if (!email) {
+        showMessage(loginMessage, "Masukkan email terlebih dahulu, lalu tekan Lupa password.", true);
+        document.getElementById("email").focus();
+        return;
+    }
+
+    const button = document.getElementById("forgot-password");
+    button.disabled = true;
+    showMessage(loginMessage, "Mengirim tautan pemulihan...");
+
+    try {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: window.location.href.split("#")[0]
+        });
+        if (error) throw error;
+        showMessage(loginMessage, "Jika email terdaftar, tautan pemulihan akan dikirim. Periksa kotak masuk dan folder spam.");
+    } catch (error) {
+        console.error("Permintaan pemulihan gagal:", error);
+        showMessage(loginMessage, "Tautan pemulihan belum bisa dikirim. Periksa pengaturan email Supabase.", true);
+    } finally {
+        button.disabled = false;
+    }
+});
+
+recoveryForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const password = document.getElementById("recovery-password").value;
+    const confirmation = document.getElementById("recovery-confirm-password").value;
+    const message = document.getElementById("recovery-message");
+    const submitButton = recoveryForm.querySelector('button[type="submit"]');
+
+    if (password.length < 8) {
+        showMessage(message, "Password minimal 8 karakter.", true);
+        return;
+    }
+    if (password !== confirmation) {
+        showMessage(message, "Konfirmasi password belum cocok.", true);
+        return;
+    }
+
+    submitButton.disabled = true;
+    showMessage(message, "Menyimpan password baru...");
+    try {
+        const { error } = await supabase.auth.updateUser({ password });
+        if (error) throw error;
+        recoveryForm.reset();
+        await supabase.auth.signOut();
+        showAuthView("login");
+        showMessage(loginMessage, "Password berhasil diubah. Silakan masuk dengan password baru.");
+    } catch (error) {
+        console.error("Gagal mengubah password:", error);
+        showMessage(message, error.message || "Password belum bisa diubah. Buka kembali tautan pemulihan dari email.", true);
+    } finally {
+        submitButton.disabled = false;
+    }
+});
+
+supabase.auth.onAuthStateChange((event) => {
+    if (event === "PASSWORD_RECOVERY") showPasswordRecovery();
+});
+
 transactionForm.addEventListener("submit", async (event) => {
     event.preventDefault();
 
@@ -453,7 +608,7 @@ document.getElementById("logout-button").addEventListener("click", async () => {
 });
 
 async function initializeApp() {
-    showLogin();
+    showAuthView("login");
     showMessage(loginMessage, "Memeriksa sesi...");
 
     const { data, error } = await supabase.auth.getSession();
