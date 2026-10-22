@@ -4,16 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pockito — Catatan Keuangan</title>
-    <link rel="stylesheet" href="style.css?v=20261022-8">
+    <link rel="stylesheet" href="style.css?v=20261022-9">
 </head>
 <body>
     <main class="app">
         <header class="app-header">
-            <div>
+            <div class="brand-copy">
                 <p class="eyebrow">PERSONAL FINANCE</p>
                 <h1>Pockito 🐻</h1>
                 <p class="subtitle">Catatan kecil, keuangan terkendali.</p>
             </div>
+            <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Aktifkan tema gelap" aria-pressed="false">
+                <span class="theme-toggle-icon" aria-hidden="true">☾</span>
+                <span class="theme-toggle-label">Mode gelap</span>
+            </button>
         </header>
 
         <section id="login-section" class="panel auth-panel">
@@ -206,6 +210,6 @@
         </section>
     </main>
 
-    <script type="module" src="app.js?v=20261022-8"></script>
+    <script type="module" src="app.js?v=20261022-9"></script>
 </body>
 </html>
