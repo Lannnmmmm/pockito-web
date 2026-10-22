@@ -1508,7 +1508,7 @@ document.getElementById("target-form").addEventListener("submit", async (event) 
             user_id: currentUser.id, name, target_amount: targetAmount
         });
         if (error) throw error;
-        event.currentTarget.reset();
+        document.getElementById("target-form").reset();
         await loadSavingsTargets();
         showMessage(document.getElementById("target-message"), `Target "${name}" berhasil dibuat.`);
     } catch (error) {
