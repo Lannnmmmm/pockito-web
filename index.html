@@ -35,63 +35,96 @@
         </section>
 
         <section id="dashboard-section" hidden>
-            <div class="panel">
-                <p>Saldo</p>
-                <h2 id="total-balance">Rp0</h2>
-                <div class="summary">
-                    <div>
-                        <p>Pemasukan</p>
-                        <strong id="total-income">Rp0</strong>
+            <nav class="app-nav" aria-label="Menu utama">
+                <button type="button" class="nav-tab active" data-view-target="home" aria-current="page">Beranda</button>
+                <button type="button" class="nav-tab" data-view-target="transactions" aria-current="false">Transaksi</button>
+                <button type="button" class="nav-tab" data-view-target="categories" aria-current="false">Kategori</button>
+            </nav>
+
+            <section data-view="home">
+                <div class="panel balance-panel">
+                    <p class="section-kicker">RINGKASAN KEUANGAN</p>
+                    <p>Saldo saat ini</p>
+                    <h2 id="total-balance">Rp0</h2>
+                    <div class="summary">
+                        <div>
+                            <p>Pemasukan</p>
+                            <strong id="total-income">Rp0</strong>
+                        </div>
+                        <div>
+                            <p>Pengeluaran</p>
+                            <strong id="total-expense">Rp0</strong>
+                        </div>
                     </div>
-                    <div>
-                        <p>Pengeluaran</p>
-                        <strong id="total-expense">Rp0</strong>
-                    </div>
+                    <button type="button" class="secondary-action" data-view-target="transactions">+ Catat transaksi</button>
                 </div>
-            </div>
+                <div class="panel">
+                    <h2>Transaksi terbaru</h2>
+                    <div id="home-transaction-list"></div>
+                </div>
+            </section>
 
-            <div class="panel">
-                <h2>Tambah transaksi</h2>
-                <form id="transaction-form">
-                    <label for="transaction-type">Jenis transaksi</label>
-                    <select id="transaction-type" required>
-                        <option value="expense">Pengeluaran</option>
-                        <option value="income">Pemasukan</option>
-                    </select>
+            <section data-view="transactions" hidden>
+                <div class="panel">
+                    <h2>Tambah transaksi</h2>
+                    <form id="transaction-form">
+                        <label for="transaction-type">Jenis transaksi</label>
+                        <select id="transaction-type" required>
+                            <option value="expense">Pengeluaran</option>
+                            <option value="income">Pemasukan</option>
+                        </select>
 
-                    <label for="transaction-category">Kategori</label>
-                    <select id="transaction-category" required>
-                        <option value="">Memuat kategori...</option>
-                    </select>
+                        <label for="transaction-category">Kategori</label>
+                        <select id="transaction-category" required>
+                            <option value="">Memuat kategori...</option>
+                        </select>
 
-                    <label for="new-category-name">Buat kategori sendiri</label>
-                    <div class="category-create">
-                        <input id="new-category-name" type="text" maxlength="50"
-                               placeholder="Contoh: Nabung Nikah">
-                        <button id="add-category-button" type="button">Tambah</button>
-                    </div>
-                    <small class="field-hint">Kategori dibuat untuk jenis transaksi yang sedang dipilih.</small>
+                        <label for="transaction-amount">Nominal (Rp)</label>
+                        <input id="transaction-amount" type="number"
+                               min="1" step="1" required placeholder="Contoh: 25000">
 
-                    <label for="transaction-amount">Nominal (Rp)</label>
-                    <input id="transaction-amount" type="number"
-                           min="1" step="1" required placeholder="Contoh: 25000">
+                        <label for="transaction-description">Keterangan</label>
+                        <input id="transaction-description" type="text"
+                               maxlength="200" placeholder="Contoh: Makan siang">
 
-                    <label for="transaction-description">Keterangan</label>
-                    <input id="transaction-description" type="text"
-                           maxlength="200" placeholder="Contoh: Makan siang">
+                        <label for="transaction-date">Tanggal</label>
+                        <input id="transaction-date" type="date" required>
 
-                    <label for="transaction-date">Tanggal</label>
-                    <input id="transaction-date" type="date" required>
+                        <button type="submit">Simpan transaksi</button>
+                        <p id="transaction-message" role="status"></p>
+                    </form>
+                </div>
+                <div class="panel">
+                    <h2>Riwayat transaksi</h2>
+                    <div id="transaction-list"></div>
+                </div>
+            </section>
 
-                    <button type="submit">Simpan transaksi</button>
-                    <p id="transaction-message" role="status"></p>
-                </form>
-            </div>
+            <section data-view="categories" hidden>
+                <div class="panel">
+                    <p class="section-kicker">PENGATURAN PERSONAL</p>
+                    <h2>Kelola kategori</h2>
+                    <p class="panel-description">Kategori di sini hanya tersimpan untuk akunmu.</p>
+                    <form id="category-form">
+                        <label for="custom-category-name">Nama kategori baru</label>
+                        <input id="custom-category-name" type="text" maxlength="50"
+                               required placeholder="Contoh: Nabung Nikah">
 
-            <div class="panel">
-                <h2>Riwayat transaksi</h2>
-                <div id="transaction-list"></div>
-            </div>
+                        <label for="custom-category-type">Jenis kategori</label>
+                        <select id="custom-category-type" required>
+                            <option value="expense">Pengeluaran</option>
+                            <option value="income">Pemasukan</option>
+                        </select>
+
+                        <button type="submit">+ Tambah kategori</button>
+                        <p id="category-message" role="status"></p>
+                    </form>
+                </div>
+                <div class="panel">
+                    <h2>Kategori milikmu</h2>
+                    <div id="category-list"></div>
+                </div>
+            </section>
 
             <button id="logout-button" type="button">Keluar</button>
         </section>
