@@ -38,16 +38,28 @@ let currentUser = null;
 let currentWallet = null;
 let currentCategories = [];
 
-function todayLocal() {
+function localDateTimeValues() {
     const now = new Date();
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, "0");
     const day = String(now.getDate()).padStart(2, "0");
+    const hours = String(now.getHours()).padStart(2, "0");
+    const minutes = String(now.getMinutes()).padStart(2, "0");
+    const seconds = String(now.getSeconds()).padStart(2, "0");
 
-    return `${year}-${month}-${day}`;
+    return {
+        date: `${year}-${month}-${day}`,
+        time: `${hours}:${minutes}:${seconds}`
+    };
 }
 
-document.getElementById("transaction-date").value = todayLocal();
+function setTransactionDateTimeToNow() {
+    const values = localDateTimeValues();
+    document.getElementById("transaction-date").value = values.date;
+    document.getElementById("transaction-time").value = values.time;
+}
+
+setTransactionDateTimeToNow();
 
 function showMessage(element, message, isError = false) {
     element.textContent = message;
@@ -229,9 +241,10 @@ async function loadTransactions() {
 
     const { data: transactions, error } = await supabase
         .from("transactions")
-        .select("id, type, amount, description, transaction_date, category_id")
+        .select("id, type, amount, description, transaction_date, transaction_time, category_id")
         .eq("user_id", currentUser.id)
         .order("transaction_date", { ascending: false })
+        .order("transaction_time", { ascending: false, nullsFirst: false })
         .order("created_at", { ascending: false });
 
     if (error) throw error;
@@ -267,7 +280,9 @@ async function loadTransactions() {
         categoryLabel.textContent = category ? category.name : "Tanpa kategori";
 
         const date = document.createElement("small");
-        date.textContent = transaction.transaction_date;
+        date.textContent = transaction.transaction_time
+            ? `${transaction.transaction_date} • ${transaction.transaction_time}`
+            : transaction.transaction_date;
 
         const value = document.createElement("div");
         value.className = `transaction-amount ${
@@ -373,12 +388,13 @@ transactionForm.addEventListener("submit", async (event) => {
         .getElementById("transaction-description")
         .value.trim();
     const transactionDate = document.getElementById("transaction-date").value;
+    const transactionTime = document.getElementById("transaction-time").value;
     const submitButton = transactionForm.querySelector(
         'button[type="submit"]'
     );
 
-    if (!Number.isFinite(amount) || amount <= 0 || !transactionDate || !categoryId) {
-        showMessage(transactionMessage, "Periksa nominal, kategori, dan tanggal transaksi.", true);
+    if (!Number.isFinite(amount) || amount <= 0 || !transactionDate || !transactionTime || !categoryId) {
+        showMessage(transactionMessage, "Periksa nominal, kategori, tanggal, dan waktu transaksi.", true);
         return;
     }
 
@@ -395,14 +411,15 @@ transactionForm.addEventListener("submit", async (event) => {
                 category_id: categoryId,
                 amount,
                 description: description || null,
-                transaction_date: transactionDate
+                transaction_date: transactionDate,
+                transaction_time: transactionTime
             });
 
         if (error) throw error;
 
         transactionForm.reset();
         renderCategoryOptions();
-        document.getElementById("transaction-date").value = todayLocal();
+        setTransactionDateTimeToNow();
         await loadTransactions();
 
         showMessage(transactionMessage, "Transaksi berhasil disimpan!");
