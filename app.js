@@ -851,7 +851,7 @@ function renderHomeWalletBalances() {
         identity.append(icon, name);
 
         const balance = document.createElement("strong");
-        balance.textContent = rupiah.format(income - expense);
+        balance.textContent = rupiah.format(walletBalance);
 
         row.append(identity, balance);
         list.append(row);
