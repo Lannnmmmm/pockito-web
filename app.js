@@ -1082,7 +1082,19 @@ async function openUserSession(user) {
     try {
         await loadWallets();
         await loadCategories();
-        await loadSavingsTargets();
+        try {
+            await loadSavingsTargets();
+        } catch (targetLoadError) {
+            console.error("Target tab belum bisa dimuat:", targetLoadError);
+            cachedSavingsTargets = [];
+            cachedTargetMovements = [];
+            renderSavingsTargets();
+            showMessage(
+                document.getElementById("target-message"),
+                "Fitur target memerlukan migrasi database terbaru. Data lain tetap bisa digunakan.",
+                true
+            );
+        }
         await loadTransactions();
         showDashboard();
         showView("home");
