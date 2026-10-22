@@ -19,6 +19,8 @@ const transactionMessage = document.getElementById("transaction-message");
 const transactionList = document.getElementById("transaction-list");
 const transactionType = document.getElementById("transaction-type");
 const transactionCategory = document.getElementById("transaction-category");
+const newCategoryInput = document.getElementById("new-category-name");
+const addCategoryButton = document.getElementById("add-category-button");
 
 const rupiah = new Intl.NumberFormat("id-ID", {
     style: "currency",
@@ -383,5 +385,58 @@ async function initializeApp() {
 }
 
 transactionType.addEventListener("change", renderCategoryOptions);
+
+addCategoryButton.addEventListener("click", async () => {
+    if (!currentUser) {
+        showMessage(transactionMessage, "Silakan masuk kembali.", true);
+        return;
+    }
+
+    const name = newCategoryInput.value.trim();
+    const type = transactionType.value;
+
+    if (!name) {
+        showMessage(transactionMessage, "Isi nama kategori terlebih dahulu.", true);
+        newCategoryInput.focus();
+        return;
+    }
+
+    if (currentCategories.some((category) =>
+        category.type === type && category.name.toLocaleLowerCase() === name.toLocaleLowerCase()
+    )) {
+        showMessage(transactionMessage, "Kategori dengan nama itu sudah ada untuk jenis transaksi ini.", true);
+        return;
+    }
+
+    addCategoryButton.disabled = true;
+    showMessage(transactionMessage, "Menambahkan kategori...");
+
+    try {
+        const { data: newCategory, error } = await supabase
+            .from("categories")
+            .insert({
+                user_id: currentUser.id,
+                name,
+                type
+            })
+            .select("id, name, type")
+            .single();
+
+        if (error) throw error;
+
+        await loadCategories();
+        transactionCategory.value = newCategory.id;
+        newCategoryInput.value = "";
+        showMessage(
+            transactionMessage,
+            `Kategori "${newCategory.name}" berhasil ditambahkan untuk ${type === "income" ? "pemasukan" : "pengeluaran"}.`
+        );
+    } catch (error) {
+        console.error("Gagal menambahkan kategori:", error);
+        showMessage(transactionMessage, "Kategori gagal ditambahkan. Coba lagi.", true);
+    } finally {
+        addCategoryButton.disabled = false;
+    }
+});
 
 initializeApp();
