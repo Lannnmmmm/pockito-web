@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pockito — Catatan Keuangan</title>
-    <link rel="stylesheet" href="style.css?v=20261022-7">
+    <link rel="stylesheet" href="style.css?v=20261022-8">
 </head>
 <body>
     <main class="app">
@@ -94,20 +94,36 @@
                     <p class="section-kicker">RINGKASAN KEUANGAN</p>
                     <p>Saldo saat ini</p>
                     <h2 id="total-balance">Rp0</h2>
+                    <p class="balance-caption">Akumulasi dari seluruh transaksi yang tercatat</p>
+                    <button type="button" class="secondary-action" data-view-target="transactions">+ Catat transaksi</button>
+                </div>
+                <div class="panel monthly-panel">
+                    <div class="monthly-heading">
+                        <div>
+                            <p class="section-kicker">RINGKASAN PERIODE</p>
+                            <h2 id="monthly-title">Bulan ini</h2>
+                        </div>
+                        <span id="monthly-transaction-count" class="monthly-count">0 transaksi</span>
+                    </div>
                     <div class="summary">
                         <div>
-                            <p>Pemasukan</p>
+                            <p>Pemasukan bulan ini</p>
                             <strong id="total-income">Rp0</strong>
                         </div>
                         <div>
-                            <p>Pengeluaran</p>
+                            <p>Pengeluaran bulan ini</p>
                             <strong id="total-expense">Rp0</strong>
                         </div>
                     </div>
-                    <button type="button" class="secondary-action" data-view-target="transactions">+ Catat transaksi</button>
                 </div>
-                <div class="panel">
-                    <h2>Transaksi terbaru</h2>
+                <div class="panel recent-panel">
+                    <div class="recent-heading">
+                        <div>
+                            <p class="section-kicker">AKTIVITAS TERAKHIR</p>
+                            <h2>Transaksi terbaru</h2>
+                        </div>
+                        <button type="button" class="text-action recent-view-all" data-view-target="transactions">Lihat semua</button>
+                    </div>
                     <div id="home-transaction-list"></div>
                 </div>
             </section>
@@ -190,6 +206,6 @@
         </section>
     </main>
 
-    <script type="module" src="app.js?v=20261022-7"></script>
+    <script type="module" src="app.js?v=20261022-8"></script>
 </body>
 </html>
