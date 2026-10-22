@@ -467,6 +467,40 @@ signupForm.addEventListener("submit", async (event) => {
     }
 });
 
+document.getElementById("resend-verification").addEventListener("click", async () => {
+    const email = document.getElementById("email").value.trim();
+    if (!email) {
+        showMessage(loginMessage, "Masukkan email akun yang belum terverifikasi terlebih dahulu.", true);
+        document.getElementById("email").focus();
+        return;
+    }
+
+    const button = document.getElementById("resend-verification");
+    button.disabled = true;
+    showMessage(loginMessage, "Mengirim ulang email verifikasi...");
+
+    try {
+        const { error } = await supabase.auth.resend({
+            type: "signup",
+            email,
+            options: { emailRedirectTo: APP_URL }
+        });
+        if (error) throw error;
+        showMessage(loginMessage, "Permintaan verifikasi diproses. Periksa kotak masuk dan folder spam. Jika baru meminta email, tunggu beberapa menit sebelum mencoba lagi.");
+    } catch (error) {
+        console.error("Kirim ulang verifikasi gagal:", error);
+        showMessage(
+            loginMessage,
+            error.message?.toLowerCase().includes("rate limit")
+                ? "Email terlalu sering diminta. Tunggu beberapa menit lalu coba lagi."
+                : (error.message || "Email verifikasi belum bisa dikirim. Pastikan akun sudah pernah didaftarkan dan belum terverifikasi."),
+            true
+        );
+    } finally {
+        button.disabled = false;
+    }
+});
+
 document.getElementById("forgot-password").addEventListener("click", async () => {
     const email = document.getElementById("email").value.trim();
     if (!email) {
