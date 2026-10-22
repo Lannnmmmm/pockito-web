@@ -17,6 +17,7 @@ const transactionForm = document.getElementById("transaction-form");
 const loginMessage = document.getElementById("login-message");
 const transactionMessage = document.getElementById("transaction-message");
 const transactionList = document.getElementById("transaction-list");
+const homeTransactionList = document.getElementById("home-transaction-list");
 const transactionType = document.getElementById("transaction-type");
 const transactionCategory = document.getElementById("transaction-category");
 const categoryForm = document.getElementById("category-form");
@@ -224,6 +225,7 @@ function showView(viewName) {
 
 async function loadTransactions() {
     transactionList.replaceChildren();
+    homeTransactionList.replaceChildren();
 
     const { data: transactions, error } = await supabase
         .from("transactions")
@@ -278,6 +280,9 @@ async function loadTransactions() {
         info.append(description, categoryLabel, date);
         item.append(info, value);
         transactionList.append(item);
+        if (homeTransactionList.childElementCount < 5) {
+            homeTransactionList.append(item.cloneNode(true));
+        }
     }
 
     document.getElementById("total-income").textContent =
@@ -294,6 +299,8 @@ async function loadTransactions() {
         empty.textContent = "Belum ada transaksi. Yuk, catat transaksi pertamamu!";
         empty.style.color = "#858b81";
         transactionList.append(empty);
+        const homeEmpty = empty.cloneNode(true);
+        homeTransactionList.append(homeEmpty);
     }
 }
 
