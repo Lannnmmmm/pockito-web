@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pockito — Catatan Keuangan</title>
-    <link rel="stylesheet" href="style.css?v=20261022-15">
+    <link rel="stylesheet" href="style.css?v=20261022-16">
 </head>
 <body>
     <main class="app">
@@ -92,6 +92,7 @@
                 <button type="button" class="nav-tab" data-view-target="input" aria-current="false">Input</button>
                 <button type="button" class="nav-tab" data-view-target="history" aria-current="false">Riwayat</button>
                 <button type="button" class="nav-tab" data-view-target="reports" aria-current="false">Laporan</button>
+                <button type="button" class="nav-tab" data-view-target="targets" aria-current="false">Target</button>
                 <button type="button" class="nav-tab" data-view-target="wallets" aria-current="false">Dompet</button>
                 <button type="button" class="nav-tab" data-view-target="categories" aria-current="false">Kategori</button>
             </nav>
@@ -253,6 +254,31 @@
                 </div>
             </section>
 
+            <section data-view="targets" hidden>
+                <div class="panel">
+                    <p class="section-kicker">RENCANA MASA DEPAN</p>
+                    <h2>Target tabungan</h2>
+                    <p class="panel-description">Pisahkan uang untuk tujuan tertentu tanpa menghitung transfer sebagai pemasukan atau pengeluaran.</p>
+                    <form id="target-form">
+                        <label for="target-name">Nama target</label>
+                        <input id="target-name" type="text" maxlength="80" required placeholder="Contoh: Mahar, Liburan, Dana darurat">
+                        <label for="target-amount">Nominal target (opsional)</label>
+                        <input id="target-amount" type="number" min="1" step="1" placeholder="Contoh: 15000000">
+                        <button type="submit">+ Buat target</button>
+                        <p id="target-message" role="status" aria-live="polite"></p>
+                    </form>
+                </div>
+                <div class="panel">
+                    <h2>Target aktif</h2>
+                    <div id="active-target-list"></div>
+                </div>
+                <div class="panel">
+                    <h2>Riwayat target selesai</h2>
+                    <p class="panel-description">Target yang selesai tetap tersimpan bersama catatan pergerakan dan biaya aktual.</p>
+                    <div id="completed-target-list"></div>
+                </div>
+            </section>
+
             <section data-view="wallets" hidden>
                 <div class="panel">
                     <p class="section-kicker">PENGATURAN PERSONAL</p>
@@ -301,6 +327,6 @@
         </section>
     </main>
 
-    <script type="module" src="app.js?v=20261022-15"></script>
+    <script type="module" src="app.js?v=20261022-16"></script>
 </body>
 </html>
