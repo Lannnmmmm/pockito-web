@@ -79,12 +79,14 @@ function showLogin() {
 }
 
 function showDashboard() {
+    document.querySelector(".app").classList.remove("auth-mode");
     loginSection.hidden = true;
     recoverySection.hidden = true;
     dashboardSection.hidden = false;
 }
 
 function showAuthView(view) {
+    document.querySelector(".app").classList.add("auth-mode");
     recoverySection.hidden = true;
     loginSection.hidden = false;
     dashboardSection.hidden = true;
@@ -99,6 +101,7 @@ function showAuthView(view) {
 }
 
 function showPasswordRecovery() {
+    document.querySelector(".app").classList.add("auth-mode");
     loginSection.hidden = true;
     dashboardSection.hidden = true;
     recoverySection.hidden = false;
