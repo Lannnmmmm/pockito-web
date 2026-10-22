@@ -23,6 +23,12 @@ const signupView = document.getElementById("signup-view");
 const loginTabButton = document.getElementById("show-login");
 const signupTabButton = document.getElementById("show-signup");
 const transactionForm = document.getElementById("transaction-form");
+const transactionWalletField = document.getElementById("transaction-wallet-field");
+const transactionWalletSelect = document.getElementById("transaction-wallet");
+const walletForm = document.getElementById("wallet-form");
+const walletNameInput = document.getElementById("wallet-name");
+const walletMessage = document.getElementById("wallet-message");
+const walletList = document.getElementById("wallet-list");
 const loginMessage = document.getElementById("login-message");
 const transactionMessage = document.getElementById("transaction-message");
 const transactionList = document.getElementById("transaction-list");
@@ -77,7 +83,7 @@ const rupiah = new Intl.NumberFormat("id-ID", {
 });
 
 let currentUser = null;
-let currentWallet = null;
+let currentWallets = [];
 let currentCategories = [];
 
 function localDateTimeValues() {
@@ -142,33 +148,62 @@ function showPasswordRecovery() {
     recoverySection.hidden = false;
 }
 
-async function getOrCreateWallet() {
+async function loadWallets() {
     const { data: wallets, error } = await supabase
         .from("wallets")
-        .select("id, name")
+        .select("id, name, balance, created_at")
         .eq("user_id", currentUser.id)
-        .limit(1);
+        .order("created_at", { ascending: true });
 
     if (error) throw error;
+    currentWallets = wallets || [];
+    renderWalletOptions();
+    renderWalletList();
+}
 
-    if (wallets.length > 0) {
-        currentWallet = wallets[0];
+function renderWalletOptions() {
+    const previousValue = transactionWalletSelect.value;
+    transactionWalletSelect.replaceChildren();
+
+    for (const wallet of currentWallets) {
+        const option = document.createElement("option");
+        option.value = wallet.id;
+        option.textContent = wallet.name;
+        transactionWalletSelect.append(option);
+    }
+
+    transactionWalletField.hidden = currentWallets.length === 0;
+    transactionWalletSelect.required = currentWallets.length > 0;
+
+    if (currentWallets.some((wallet) => wallet.id === previousValue)) {
+        transactionWalletSelect.value = previousValue;
+    } else if (currentWallets.length > 0) {
+        transactionWalletSelect.value = currentWallets[0].id;
+    }
+}
+
+function renderWalletList() {
+    walletList.replaceChildren();
+
+    if (currentWallets.length === 0) {
+        const empty = document.createElement("p");
+        empty.className = "empty-note";
+        empty.textContent = "Belum ada dompet. Kamu tetap bisa mencatat transaksi tanpa dompet.";
+        walletList.append(empty);
         return;
     }
 
-    const { data: wallet, error: createError } = await supabase
-        .from("wallets")
-        .insert({
-            user_id: currentUser.id,
-            name: "Dompet Utama",
-            balance: 0
-        })
-        .select("id, name")
-        .single();
-
-    if (createError) throw createError;
-
-    currentWallet = wallet;
+    for (const wallet of currentWallets) {
+        const item = document.createElement("div");
+        item.className = "category-item";
+        const name = document.createElement("strong");
+        name.textContent = wallet.name;
+        const tag = document.createElement("small");
+        tag.className = "category-tag";
+        tag.textContent = "Dompet";
+        item.append(name, tag);
+        walletList.append(item);
+    }
 }
 
 const defaultCategories = [
@@ -450,10 +485,10 @@ async function loadTransactions() {
 
 async function openUserSession(user) {
     currentUser = user;
-    currentWallet = null;
+    currentWallets = [];
 
     try {
-        await getOrCreateWallet();
+        await loadWallets();
         await loadCategories();
         await loadTransactions();
         showDashboard();
@@ -666,7 +701,7 @@ supabase.auth.onAuthStateChange((event) => {
 transactionForm.addEventListener("submit", async (event) => {
     event.preventDefault();
 
-    if (!currentUser || !currentWallet) {
+    if (!currentUser) {
         showMessage(transactionMessage, "Silakan masuk kembali.", true);
         return;
     }
@@ -698,7 +733,7 @@ transactionForm.addEventListener("submit", async (event) => {
             .from("transactions")
             .insert({
                 user_id: currentUser.id,
-                wallet_id: currentWallet.id,
+                wallet_id: transactionWalletSelect.value || null,
                 type,
                 category_id: categoryId,
                 amount,
@@ -739,8 +774,10 @@ document.getElementById("logout-button").addEventListener("click", async () => {
     }
 
     currentUser = null;
-    currentWallet = null;
+    currentWallets = [];
     currentCategories = [];
+    renderWalletOptions();
+    renderWalletList();
     loginForm.reset();
     transactionForm.reset();
     showLogin();
@@ -828,6 +865,53 @@ categoryForm.addEventListener("submit", async (event) => {
     } catch (error) {
         console.error("Gagal menambahkan kategori:", error);
         showMessage(categoryMessage, "Kategori gagal ditambahkan. Coba lagi.", true);
+    } finally {
+        submitButton.disabled = false;
+    }
+});
+
+walletForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    if (!currentUser) {
+        showMessage(walletMessage, "Silakan masuk kembali.", true);
+        return;
+    }
+
+    const name = walletNameInput.value.trim();
+    const submitButton = walletForm.querySelector('button[type="submit"]');
+
+    if (!name) {
+        showMessage(walletMessage, "Isi nama dompet terlebih dahulu.", true);
+        walletNameInput.focus();
+        return;
+    }
+
+    if (currentWallets.some((wallet) => wallet.name.toLocaleLowerCase() === name.toLocaleLowerCase())) {
+        showMessage(walletMessage, "Nama dompet itu sudah ada.", true);
+        return;
+    }
+
+    submitButton.disabled = true;
+    showMessage(walletMessage, "Menyimpan dompet...");
+
+    try {
+        const { error } = await supabase
+            .from("wallets")
+            .insert({
+                user_id: currentUser.id,
+                name,
+                balance: 0
+            });
+
+        if (error) throw error;
+
+        await loadWallets();
+        walletNameInput.value = "";
+        showMessage(walletMessage, `Dompet "${name}" berhasil ditambahkan.`);
+    } catch (error) {
+        console.error("Gagal menambahkan dompet:", error);
+        showMessage(walletMessage, "Dompet gagal ditambahkan. Coba lagi.", true);
     } finally {
         submitButton.disabled = false;
     }
