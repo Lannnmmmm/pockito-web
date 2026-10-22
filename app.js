@@ -413,6 +413,44 @@ function createTransactionItem(transaction) {
     return item;
 }
 
+function renderHomeWalletBalances() {
+    const container = document.getElementById("home-wallet-balances");
+    const list = document.getElementById("home-wallet-balance-list");
+    if (!container || !list) return;
+
+    list.replaceChildren();
+    if (currentWallets.length === 0) {
+        container.hidden = true;
+        return;
+    }
+
+    for (const wallet of currentWallets) {
+        const walletTransactions = cachedTransactions.filter(
+            (transaction) => transaction.wallet_id === wallet.id
+        );
+        const income = walletTransactions
+            .filter((transaction) => transaction.type === "income")
+            .reduce((sum, transaction) => sum + Number(transaction.amount), 0);
+        const expense = walletTransactions
+            .filter((transaction) => transaction.type === "expense")
+            .reduce((sum, transaction) => sum + Number(transaction.amount), 0);
+
+        const row = document.createElement("div");
+        row.className = "home-wallet-balance-row";
+
+        const name = document.createElement("span");
+        name.textContent = wallet.name;
+
+        const balance = document.createElement("strong");
+        balance.textContent = rupiah.format(income - expense);
+
+        row.append(name, balance);
+        list.append(row);
+    }
+
+    container.hidden = false;
+}
+
 function renderHomeTransactions(transactions) {
     homeTransactionList.replaceChildren();
     const latest = transactions.slice(0, 5);
@@ -511,6 +549,7 @@ async function loadTransactions() {
     renderHomeTransactions(cachedTransactions);
     renderHistoryTransactions();
     renderWalletList();
+    renderHomeWalletBalances();
 }
 
 async function openUserSession(user) {
