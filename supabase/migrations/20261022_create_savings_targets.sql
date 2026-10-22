@@ -7,12 +7,13 @@ CREATE TABLE IF NOT EXISTS public.savings_targets (
     target_amount numeric(14,2) NULL CHECK (target_amount IS NULL OR target_amount > 0),
     status text NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'completed')),
     created_at timestamptz NOT NULL DEFAULT now(),
-    completed_at timestamptz NULL
+    completed_at timestamptz NULL,
+    CONSTRAINT savings_targets_id_user_unique UNIQUE (id, user_id)
 );
 
 CREATE TABLE IF NOT EXISTS public.savings_target_movements (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    target_id uuid NOT NULL REFERENCES public.savings_targets(id) ON DELETE CASCADE,
+    target_id uuid NOT NULL,
     user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     wallet_id uuid NULL,
     movement_type text NOT NULL CHECK (movement_type IN ('deposit', 'return', 'spend')),
@@ -20,6 +21,10 @@ CREATE TABLE IF NOT EXISTS public.savings_target_movements (
     description text NULL,
     movement_date date NOT NULL DEFAULT CURRENT_DATE,
     created_at timestamptz NOT NULL DEFAULT now(),
+    CONSTRAINT savings_target_movements_target_user_fk
+        FOREIGN KEY (target_id, user_id)
+        REFERENCES public.savings_targets(id, user_id)
+        ON DELETE CASCADE,
     CONSTRAINT savings_target_movements_wallet_user_fk
         FOREIGN KEY (wallet_id, user_id)
         REFERENCES public.wallets(id, user_id)
