@@ -997,3 +997,90 @@ button:disabled {
 :root[data-theme="dark"] .home-wallet-balance-row strong {
     color: #c5dfca;
 }
+
+/* Wallet icons and account management actions */
+.wallet-item {
+    align-items: center;
+    gap: 10px;
+}
+.wallet-identity,
+.home-wallet-identity {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 12px;
+}
+.wallet-identity {
+    flex: 1;
+}
+.wallet-icon {
+    display: inline-flex;
+    flex: 0 0 42px;
+    width: 42px;
+    height: 42px;
+    align-items: center;
+    justify-content: center;
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    font-size: 21px;
+}
+.wallet-actions {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 6px;
+}
+.wallet-action-button {
+    display: inline-flex;
+    min-height: 36px;
+    width: 36px;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    color: var(--text);
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 15px;
+}
+.wallet-action-button:hover {
+    background: var(--border);
+}
+.wallet-delete-button:hover {
+    background: #f8e5e2;
+}
+.home-wallet-identity {
+    gap: 9px;
+}
+.home-wallet-icon {
+    flex-basis: 32px;
+    width: 32px;
+    height: 32px;
+    border-radius: 11px;
+    font-size: 17px;
+}
+:root[data-theme="dark"] .wallet-delete-button:hover {
+    background: #4b302d;
+}
+@media (max-width: 380px) {
+    .wallet-item {
+        align-items: flex-start;
+    }
+    .wallet-identity {
+        gap: 8px;
+    }
+    .wallet-icon {
+        flex-basis: 36px;
+        width: 36px;
+        height: 36px;
+        font-size: 18px;
+    }
+    .wallet-actions {
+        gap: 4px;
+    }
+    .wallet-action-button {
+        min-height: 32px;
+        width: 32px;
+    }
+}
