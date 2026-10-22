@@ -395,7 +395,7 @@ function renderHistoryTransactions() {
     if (monthTransactions.length === 0) {
         const empty = document.createElement("p");
         empty.className = "empty-note";
-        empty.textContent = "Belum ada transaksi pada bulan ini.";
+        empty.textContent = `Belum ada transaksi pada ${monthLabel(historyMonth)}.`;
         transactionList.append(empty);
     }
 }
@@ -712,7 +712,8 @@ transactionForm.addEventListener("submit", async (event) => {
         transactionForm.reset();
         renderCategoryOptions();
         setTransactionDateTimeToNow();
-        historyMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+        historyMonth = new Date(`${transactionDate}T00:00:00`);
+        historyMonth = new Date(historyMonth.getFullYear(), historyMonth.getMonth(), 1);
         await loadTransactions();
 
         showMessage(transactionMessage, "Transaksi berhasil disimpan!");
