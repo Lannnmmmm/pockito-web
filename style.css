@@ -1084,3 +1084,129 @@ button:disabled {
         width: 32px;
     }
 }
+
+/* Monthly financial reports */
+.report-metric-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 16px;
+}
+.report-metric {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 7px;
+    padding: 14px;
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+}
+.report-metric span {
+    color: var(--muted);
+    font-size: 12px;
+}
+.report-metric strong {
+    overflow-wrap: anywhere;
+    font-size: clamp(14px, 3.6vw, 19px);
+}
+.report-income strong { color: var(--income); }
+.report-expense strong { color: var(--expense); }
+.report-remaining strong { color: var(--primary-dark); }
+:root[data-theme="dark"] .report-remaining strong { color: #c5dfca; }
+.report-insight {
+    margin: 16px 0 0;
+    padding: 12px 14px;
+    background: var(--background);
+    border-radius: 12px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.5;
+}
+.report-chart-layout {
+    display: grid;
+    grid-template-columns: minmax(120px, 0.8fr) minmax(0, 1.2fr);
+    align-items: center;
+    gap: 18px;
+    margin-top: 14px;
+}
+.report-donut {
+    display: grid;
+    width: min(100%, 210px);
+    aspect-ratio: 1;
+    place-items: center;
+    border-radius: 50%;
+}
+.report-donut-hole {
+    display: flex;
+    width: 62%;
+    aspect-ratio: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 8px;
+    background: var(--panel);
+    border-radius: 50%;
+    text-align: center;
+}
+.report-donut-hole strong {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    font-size: clamp(11px, 2.8vw, 16px);
+}
+.report-donut-hole span {
+    color: var(--muted);
+    font-size: 10px;
+}
+.report-legend {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 12px;
+}
+.report-legend-row,
+.report-legend-label,
+.report-legend-values {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+}
+.report-legend-row {
+    justify-content: space-between;
+    gap: 8px;
+}
+.report-legend-label {
+    gap: 7px;
+    overflow-wrap: anywhere;
+    font-size: 12px;
+}
+.report-swatch {
+    flex: 0 0 10px;
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+}
+.report-legend-values {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    text-align: right;
+}
+.report-legend-values strong {
+    font-size: 12px;
+    overflow-wrap: anywhere;
+}
+.report-legend-values small {
+    color: var(--muted);
+    font-size: 11px;
+}
+@media (max-width: 390px) {
+    .report-chart-layout {
+        grid-template-columns: 1fr;
+    }
+    .report-donut {
+        width: min(70%, 190px);
+        justify-self: center;
+    }
+}
