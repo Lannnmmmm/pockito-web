@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS public.savings_target_movements (
     CONSTRAINT savings_target_movements_wallet_user_fk
         FOREIGN KEY (wallet_id, user_id)
         REFERENCES public.wallets(id, user_id)
-        ON DELETE SET NULL
+        ON DELETE SET NULL (wallet_id)
 );
 
 CREATE INDEX IF NOT EXISTS savings_targets_user_status_idx
