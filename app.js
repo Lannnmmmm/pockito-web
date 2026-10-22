@@ -85,6 +85,8 @@ const rupiah = new Intl.NumberFormat("id-ID", {
 let currentUser = null;
 let currentWallets = [];
 let currentCategories = [];
+let cachedSavingsTargets = [];
+let cachedTargetMovements = [];
 let reportMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 
 function localDateTimeValues() {
@@ -180,6 +182,304 @@ function renderWalletOptions() {
         transactionWalletSelect.value = previousValue;
     } else if (currentWallets.length > 0) {
         transactionWalletSelect.value = currentWallets[0].id;
+    }
+}
+
+function targetSavedBalance(targetId) {
+    return cachedTargetMovements
+        .filter((movement) => movement.target_id === targetId)
+        .reduce((sum, movement) => {
+            if (movement.movement_type === "deposit") return sum + Number(movement.amount);
+            return sum - Number(movement.amount);
+        }, 0);
+}
+
+function walletRecordedBalance(walletId) {
+    const income = cachedTransactions.filter((item) => item.wallet_id === walletId && item.type === "income")
+        .reduce((sum, item) => sum + Number(item.amount), 0);
+    const expense = cachedTransactions.filter((item) => item.wallet_id === walletId && item.type === "expense")
+        .reduce((sum, item) => sum + Number(item.amount), 0);
+    const transfersOut = cachedTargetMovements
+        .filter((item) => item.wallet_id === walletId && item.movement_type === "deposit")
+        .reduce((sum, item) => sum + Number(item.amount), 0);
+    const transfersIn = cachedTargetMovements
+        .filter((item) => item.wallet_id === walletId && item.movement_type === "return")
+        .reduce((sum, item) => sum + Number(item.amount), 0);
+    return income - expense - transfersOut + transfersIn;
+}
+
+async function loadSavingsTargets() {
+    const { data: targets, error: targetError } = await supabase
+        .from("savings_targets")
+        .select("id, name, target_amount, status, created_at, completed_at")
+        .eq("user_id", currentUser.id)
+        .order("created_at", { ascending: false });
+    if (targetError) throw targetError;
+
+    const { data: movements, error: movementError } = await supabase
+        .from("savings_target_movements")
+        .select("id, target_id, user_id, wallet_id, movement_type, amount, description, movement_date, created_at")
+        .eq("user_id", currentUser.id)
+        .order("movement_date", { ascending: true })
+        .order("created_at", { ascending: true });
+    if (movementError) throw movementError;
+
+    cachedSavingsTargets = targets || [];
+    cachedTargetMovements = movements || [];
+    renderSavingsTargets();
+    renderWalletList();
+    renderHomeWalletBalances();
+}
+
+function renderSavingsTargets() {
+    const activeList = document.getElementById("active-target-list");
+    const completedList = document.getElementById("completed-target-list");
+    if (!activeList || !completedList) return;
+    activeList.replaceChildren();
+    completedList.replaceChildren();
+
+    for (const target of cachedSavingsTargets) {
+        const saved = targetSavedBalance(target.id);
+        const targetAmount = target.target_amount === null ? null : Number(target.target_amount);
+        const progress = targetAmount ? Math.min(100, Math.max(0, saved / targetAmount * 100)) : null;
+        const card = document.createElement("article");
+        card.className = "target-card";
+        const top = document.createElement("div");
+        top.className = "target-card-top";
+        const icon = document.createElement("span");
+        icon.className = "target-icon";
+        icon.textContent = "🐷";
+        const titleBlock = document.createElement("div");
+        titleBlock.className = "target-title-block";
+        const title = document.createElement("h3");
+        title.textContent = target.name;
+        const balance = document.createElement("strong");
+        balance.className = "target-saved";
+        balance.textContent = rupiah.format(saved);
+        const targetLabel = document.createElement("small");
+        targetLabel.textContent = targetAmount ? `dari ${rupiah.format(targetAmount)}` : "Tanpa nominal target";
+        titleBlock.append(title, balance, targetLabel);
+        top.append(icon, titleBlock);
+        card.append(top);
+
+        if (progress !== null) {
+            const track = document.createElement("div");
+            track.className = "target-progress-track";
+            const bar = document.createElement("div");
+            bar.className = "target-progress-bar";
+            bar.style.width = `${progress}%`;
+            track.append(bar);
+            const percent = document.createElement("small");
+            percent.className = "target-progress-label";
+            percent.textContent = `${Math.round(progress)}% terkumpul`;
+            card.append(track, percent);
+        }
+
+        const movementSummary = document.createElement("small");
+        const targetMoves = cachedTargetMovements.filter((item) => item.target_id === target.id);
+        const spent = targetMoves.filter((item) => item.movement_type === "spend")
+            .reduce((sum, item) => sum + Number(item.amount), 0);
+        movementSummary.className = "target-movement-summary";
+        movementSummary.textContent = `Dana digunakan: ${rupiah.format(spent)}`;
+        card.append(movementSummary);
+
+        if (target.status === "active") {
+            const actions = document.createElement("div");
+            actions.className = "target-actions";
+            const deposit = document.createElement("button");
+            deposit.type = "button";
+            deposit.className = "secondary-action";
+            deposit.textContent = "+ Tambah dana";
+            deposit.addEventListener("click", () => moveTargetFunds(target, "deposit"));
+            const returnFunds = document.createElement("button");
+            returnFunds.type = "button";
+            returnFunds.className = "secondary-action";
+            returnFunds.textContent = "Kembalikan";
+            returnFunds.disabled = saved <= 0;
+            returnFunds.addEventListener("click", () => moveTargetFunds(target, "return"));
+            const spend = document.createElement("button");
+            spend.type = "button";
+            spend.className = "secondary-action";
+            spend.textContent = "Catat pemakaian";
+            spend.disabled = saved <= 0;
+            spend.addEventListener("click", () => moveTargetFunds(target, "spend"));
+            const edit = document.createElement("button");
+            edit.type = "button";
+            edit.className = "secondary-action";
+            edit.textContent = "Edit";
+            edit.addEventListener("click", () => editSavingsTarget(target));
+            const complete = document.createElement("button");
+            complete.type = "button";
+            complete.className = "secondary-action";
+            complete.textContent = "Tandai selesai";
+            complete.addEventListener("click", () => completeSavingsTarget(target));
+            actions.append(deposit, returnFunds, spend, edit, complete);
+            card.append(actions);
+            activeList.append(card);
+        } else {
+            const completed = document.createElement("small");
+            completed.className = "target-completed-label";
+            completed.textContent = target.completed_at
+                ? `Selesai ${new Date(target.completed_at).toLocaleDateString("id-ID")}`
+                : "Selesai";
+            card.append(completed);
+            completedList.append(card);
+        }
+    }
+
+    if (!cachedSavingsTargets.some((item) => item.status === "active")) {
+        const empty = document.createElement("p");
+        empty.className = "empty-note";
+        empty.textContent = "Belum ada target aktif. Buat target pertamamu di atas!";
+        activeList.append(empty);
+    }
+    if (!cachedSavingsTargets.some((item) => item.status === "completed")) {
+        const empty = document.createElement("p");
+        empty.className = "empty-note";
+        empty.textContent = "Belum ada target yang diselesaikan.";
+        completedList.append(empty);
+    }
+}
+
+async function refreshTargetData() {
+    await loadSavingsTargets();
+    await loadTransactions();
+    await loadWallets();
+    renderSavingsTargets();
+}
+
+async function editSavingsTarget(target) {
+    const nameValue = window.prompt("Nama target:", target.name);
+    if (nameValue === null) return;
+    const name = nameValue.trim();
+    if (!name) {
+        showMessage(document.getElementById("target-message"), "Nama target tidak boleh kosong.", true);
+        return;
+    }
+    const amountValue = window.prompt("Nominal target (kosongkan jika tidak ditentukan):", target.target_amount ?? "");
+    if (amountValue === null) return;
+    const targetAmount = amountValue.trim() === "" ? null : Number(amountValue);
+    if (targetAmount !== null && (!Number.isFinite(targetAmount) || targetAmount <= 0)) {
+        showMessage(document.getElementById("target-message"), "Nominal target harus lebih dari nol atau dikosongkan.", true);
+        return;
+    }
+    try {
+        const { error } = await supabase.from("savings_targets")
+            .update({ name, target_amount: targetAmount })
+            .eq("id", target.id).eq("user_id", currentUser.id).eq("status", "active");
+        if (error) throw error;
+        await loadSavingsTargets();
+        showMessage(document.getElementById("target-message"), "Target berhasil diperbarui.");
+    } catch (error) {
+        console.error("Gagal mengedit target:", error);
+        showMessage(document.getElementById("target-message"), "Target gagal diperbarui.", true);
+    }
+}
+
+async function moveTargetFunds(target, kind) {
+    const saved = targetSavedBalance(target.id);
+    let wallet = null;
+    if (kind === "deposit" || kind === "return") {
+        if (currentWallets.length === 0) {
+            showMessage(document.getElementById("target-message"), "Buat dompet terlebih dahulu untuk memindahkan dana.", true);
+            return;
+        }
+        const choices = currentWallets.map((item, index) =>
+            `${index + 1}. ${item.name} — ${rupiah.format(walletRecordedBalance(item.id))}`
+        ).join("\n");
+        const selected = window.prompt(`Pilih nomor dompet:\n${choices}`, "1");
+        if (selected === null) return;
+        const index = Number(selected) - 1;
+        if (!Number.isInteger(index) || index < 0 || index >= currentWallets.length) {
+            showMessage(document.getElementById("target-message"), "Pilihan dompet tidak valid.", true);
+            return;
+        }
+        wallet = currentWallets[index];
+    }
+    const amountInput = window.prompt(
+        kind === "deposit" ? `Jumlah yang dipindahkan dari ${wallet.name} ke target:`
+            : kind === "return" ? `Jumlah yang dikembalikan ke ${wallet.name}:`
+            : "Jumlah dana target yang benar-benar dipakai:",
+        ""
+    );
+    if (amountInput === null) return;
+    const amount = Number(amountInput);
+    if (!Number.isFinite(amount) || amount <= 0) {
+        showMessage(document.getElementById("target-message"), "Nominal harus lebih dari nol.", true);
+        return;
+    }
+    if (kind === "deposit" && amount > walletRecordedBalance(wallet.id)) {
+        showMessage(document.getElementById("target-message"), "Saldo dompet tidak cukup untuk transfer ini.", true);
+        return;
+    }
+    if (kind !== "deposit" && amount > saved) {
+        showMessage(document.getElementById("target-message"), "Saldo target tidak cukup.", true);
+        return;
+    }
+
+    let transactionId = null;
+    try {
+        if (kind === "spend") {
+            const category = currentCategories.find((item) => item.type === "expense" && item.name.toLocaleLowerCase("id-ID") === "lainnya")
+                || currentCategories.find((item) => item.type === "expense");
+            if (!category) throw new Error("Tidak ada kategori pengeluaran.");
+            const { data: transaction, error: transactionError } = await supabase.from("transactions")
+                .insert({
+                    user_id: currentUser.id,
+                    wallet_id: null,
+                    type: "expense",
+                    category_id: category.id,
+                    amount,
+                    description: `Pemakaian target: ${target.name}`,
+                    transaction_date: localDateTimeValues().date,
+                    transaction_time: localDateTimeValues().time
+                }).select("id").single();
+            if (transactionError) throw transactionError;
+            transactionId = transaction.id;
+        }
+
+        const { error } = await supabase.from("savings_target_movements").insert({
+            user_id: currentUser.id,
+            target_id: target.id,
+            wallet_id: wallet?.id ?? null,
+            movement_type: kind,
+            amount,
+            description: kind === "deposit" ? `Transfer dari ${wallet.name}`
+                : kind === "return" ? `Transfer kembali ke ${wallet.name}`
+                : `Pemakaian target: ${target.name}`,
+            movement_date: localDateTimeValues().date
+        });
+        if (error) {
+            if (transactionId) {
+                await supabase.from("transactions").delete().eq("id", transactionId).eq("user_id", currentUser.id);
+            }
+            throw error;
+        }
+        await loadSavingsTargets();
+        await loadTransactions();
+        await loadWallets();
+        showMessage(document.getElementById("target-message"),
+            kind === "deposit" ? "Dana berhasil dipindahkan ke target."
+                : kind === "return" ? "Dana berhasil dikembalikan ke dompet."
+                : "Pemakaian target dicatat sebagai pengeluaran.");
+    } catch (error) {
+        console.error("Gagal memproses dana target:", error);
+        showMessage(document.getElementById("target-message"), "Perubahan dana gagal disimpan. Periksa koneksi lalu muat ulang data.", true);
+    }
+}
+
+async function completeSavingsTarget(target) {
+    if (!window.confirm(`Tandai target "${target.name}" sebagai selesai? Riwayat dan sisa saldo akan tetap tersimpan.`)) return;
+    try {
+        const { error } = await supabase.from("savings_targets")
+            .update({ status: "completed", completed_at: new Date().toISOString() })
+            .eq("id", target.id).eq("user_id", currentUser.id).eq("status", "active");
+        if (error) throw error;
+        await loadSavingsTargets();
+        showMessage(document.getElementById("target-message"), "Target selesai dan tersimpan di riwayat.");
+    } catch (error) {
+        console.error("Gagal menyelesaikan target:", error);
+        showMessage(document.getElementById("target-message"), "Target gagal diselesaikan.", true);
     }
 }
 
@@ -286,6 +586,7 @@ function renderWalletList() {
         const expense = walletTransactions
             .filter((transaction) => transaction.type === "expense")
             .reduce((sum, transaction) => sum + Number(transaction.amount), 0);
+        const walletBalance = walletRecordedBalance(wallet.id);
 
         const item = document.createElement("div");
         item.className = "category-item wallet-item";
@@ -306,7 +607,7 @@ function renderWalletList() {
 
         const balance = document.createElement("strong");
         balance.className = "wallet-balance";
-        balance.textContent = rupiah.format(income - expense);
+        balance.textContent = rupiah.format(walletBalance);
 
         const totals = document.createElement("small");
         totals.className = "wallet-totals";
@@ -537,12 +838,7 @@ function renderHomeWalletBalances() {
         const walletTransactions = cachedTransactions.filter(
             (transaction) => transaction.wallet_id === wallet.id
         );
-        const income = walletTransactions
-            .filter((transaction) => transaction.type === "income")
-            .reduce((sum, transaction) => sum + Number(transaction.amount), 0);
-        const expense = walletTransactions
-            .filter((transaction) => transaction.type === "expense")
-            .reduce((sum, transaction) => sum + Number(transaction.amount), 0);
+        const walletBalance = walletRecordedBalance(wallet.id);
 
         const row = document.createElement("div");
         row.className = "home-wallet-balance-row";
@@ -789,6 +1085,7 @@ async function openUserSession(user) {
     try {
         await loadWallets();
         await loadCategories();
+        await loadSavingsTargets();
         await loadTransactions();
         showDashboard();
         showView("home");
@@ -1076,6 +1373,9 @@ document.getElementById("logout-button").addEventListener("click", async () => {
     currentUser = null;
     currentWallets = [];
     currentCategories = [];
+    cachedSavingsTargets = [];
+    cachedTargetMovements = [];
+    renderSavingsTargets();
     renderWalletOptions();
     renderWalletList();
     loginForm.reset();
@@ -1180,6 +1480,31 @@ categoryForm.addEventListener("submit", async (event) => {
         showMessage(categoryMessage, "Kategori gagal ditambahkan. Coba lagi.", true);
     } finally {
         submitButton.disabled = false;
+    }
+});
+
+document.getElementById("target-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!currentUser) return;
+    const nameInput = document.getElementById("target-name");
+    const amountInput = document.getElementById("target-amount");
+    const name = nameInput.value.trim();
+    const targetAmount = amountInput.value.trim() === "" ? null : Number(amountInput.value);
+    if (!name || (targetAmount !== null && (!Number.isFinite(targetAmount) || targetAmount <= 0))) {
+        showMessage(document.getElementById("target-message"), "Periksa nama dan nominal target.", true);
+        return;
+    }
+    try {
+        const { error } = await supabase.from("savings_targets").insert({
+            user_id: currentUser.id, name, target_amount: targetAmount
+        });
+        if (error) throw error;
+        event.currentTarget.reset();
+        await loadSavingsTargets();
+        showMessage(document.getElementById("target-message"), `Target "${name}" berhasil dibuat.`);
+    } catch (error) {
+        console.error("Gagal membuat target:", error);
+        showMessage(document.getElementById("target-message"), "Target gagal dibuat. Pastikan migrasi database sudah dijalankan.", true);
     }
 });
 
