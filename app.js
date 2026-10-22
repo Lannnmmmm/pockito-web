@@ -301,10 +301,106 @@ function showView(viewName) {
     }
 }
 
-async function loadTransactions() {
-    transactionList.replaceChildren();
-    homeTransactionList.replaceChildren();
+function monthKey(date) {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
 
+function monthLabel(date) {
+    const label = new Intl.DateTimeFormat("id-ID", {
+        month: "long",
+        year: "numeric"
+    }).format(date);
+    return label.charAt(0).toLocaleUpperCase("id-ID") + label.slice(1);
+}
+
+let historyMonth = new Date();
+historyMonth = new Date(historyMonth.getFullYear(), historyMonth.getMonth(), 1);
+let cachedTransactions = [];
+
+function createTransactionItem(transaction) {
+    const item = document.createElement("div");
+    item.className = "transaction-item";
+
+    const info = document.createElement("div");
+    info.className = "transaction-info";
+
+    const description = document.createElement("strong");
+    description.textContent =
+        transaction.description?.trim() || (
+            transaction.type === "income" ? "Pemasukan" : "Pengeluaran"
+        );
+
+    const category = currentCategories.find((entry) => entry.id === transaction.category_id);
+    const categoryLabel = document.createElement("small");
+    categoryLabel.textContent = category ? category.name : "Tanpa kategori";
+
+    const date = document.createElement("small");
+    date.textContent = transaction.transaction_time
+        ? `${transaction.transaction_date} • ${transaction.transaction_time}`
+        : transaction.transaction_date;
+
+    const value = document.createElement("div");
+    value.className = `transaction-amount ${transaction.type === "income" ? "income" : "expense"}`;
+    const sign = transaction.type === "income" ? "+" : "−";
+    value.textContent = `${sign}${rupiah.format(Number(transaction.amount))}`;
+
+    info.append(description, categoryLabel, date);
+    item.append(info, value);
+    return item;
+}
+
+function renderHomeTransactions(transactions) {
+    homeTransactionList.replaceChildren();
+    const latest = transactions.slice(0, 5);
+
+    if (latest.length === 0) {
+        const empty = document.createElement("p");
+        empty.className = "empty-note";
+        empty.textContent = "Belum ada transaksi. Yuk, catat transaksi pertamamu!";
+        homeTransactionList.append(empty);
+        return;
+    }
+
+    for (const transaction of latest) {
+        homeTransactionList.append(createTransactionItem(transaction));
+    }
+}
+
+function renderHistoryTransactions() {
+    transactionList.replaceChildren();
+    document.getElementById("history-month-label").textContent = monthLabel(historyMonth);
+
+    const selectedMonth = monthKey(historyMonth);
+    const monthTransactions = cachedTransactions.filter((transaction) =>
+        transaction.transaction_date?.startsWith(selectedMonth)
+    );
+
+    let income = 0;
+    let expense = 0;
+    for (const transaction of monthTransactions) {
+        if (transaction.type === "income") income += Number(transaction.amount);
+        else expense += Number(transaction.amount);
+        transactionList.append(createTransactionItem(transaction));
+    }
+
+    document.getElementById("history-income").textContent = rupiah.format(income);
+    document.getElementById("history-expense").textContent = rupiah.format(expense);
+    document.getElementById("history-transaction-count").textContent =
+        `${monthTransactions.length} transaksi`;
+
+    const nextMonth = new Date(historyMonth.getFullYear(), historyMonth.getMonth() + 1, 1);
+    document.getElementById("history-next-month").disabled =
+        monthKey(nextMonth) > monthKey(new Date());
+
+    if (monthTransactions.length === 0) {
+        const empty = document.createElement("p");
+        empty.className = "empty-note";
+        empty.textContent = "Belum ada transaksi pada bulan ini.";
+        transactionList.append(empty);
+    }
+}
+
+async function loadTransactions() {
     const { data: transactions, error } = await supabase
         .from("transactions")
         .select("id, type, amount, description, transaction_date, transaction_time, category_id")
@@ -315,22 +411,17 @@ async function loadTransactions() {
 
     if (error) throw error;
 
+    cachedTransactions = transactions || [];
+    const now = new Date();
+    const currentMonth = monthKey(now);
+
     let lifetimeIncome = 0;
     let lifetimeExpense = 0;
     let monthlyIncome = 0;
     let monthlyExpense = 0;
     let monthlyTransactionCount = 0;
-    const now = new Date();
-    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-    const monthLabel = new Intl.DateTimeFormat("id-ID", {
-        month: "long",
-        year: "numeric"
-    }).format(now);
 
-    document.getElementById("monthly-title").textContent =
-        monthLabel.charAt(0).toLocaleUpperCase("id-ID") + monthLabel.slice(1);
-
-    for (const transaction of transactions) {
+    for (const transaction of cachedTransactions) {
         const amount = Number(transaction.amount);
         const isCurrentMonth = transaction.transaction_date?.startsWith(currentMonth);
 
@@ -343,66 +434,18 @@ async function loadTransactions() {
         }
 
         if (isCurrentMonth) monthlyTransactionCount += 1;
-
-        const item = document.createElement("div");
-        item.className = "transaction-item";
-
-        const info = document.createElement("div");
-        info.className = "transaction-info";
-
-        const description = document.createElement("strong");
-        description.textContent =
-            transaction.description?.trim() || (
-                transaction.type === "income"
-                    ? "Pemasukan"
-                    : "Pengeluaran"
-            );
-
-        const category = currentCategories.find((item) => item.id === transaction.category_id);
-        const categoryLabel = document.createElement("small");
-        categoryLabel.textContent = category ? category.name : "Tanpa kategori";
-
-        const date = document.createElement("small");
-        date.textContent = transaction.transaction_time
-            ? `${transaction.transaction_date} • ${transaction.transaction_time}`
-            : transaction.transaction_date;
-
-        const value = document.createElement("div");
-        value.className = `transaction-amount ${
-            transaction.type === "income" ? "income" : "expense"
-        }`;
-
-        const sign = transaction.type === "income" ? "+" : "−";
-        value.textContent = `${sign}${rupiah.format(amount)}`;
-
-        info.append(description, categoryLabel, date);
-        item.append(info, value);
-        transactionList.append(item);
-        if (homeTransactionList.childElementCount < 5) {
-            homeTransactionList.append(item.cloneNode(true));
-        }
     }
 
-    document.getElementById("total-income").textContent =
-        rupiah.format(monthlyIncome);
-
-    document.getElementById("total-expense").textContent =
-        rupiah.format(monthlyExpense);
-
+    document.getElementById("monthly-title").textContent = monthLabel(now);
+    document.getElementById("total-income").textContent = rupiah.format(monthlyIncome);
+    document.getElementById("total-expense").textContent = rupiah.format(monthlyExpense);
     document.getElementById("total-balance").textContent =
         rupiah.format(lifetimeIncome - lifetimeExpense);
-
     document.getElementById("monthly-transaction-count").textContent =
         `${monthlyTransactionCount} transaksi`;
 
-    if (transactions.length === 0) {
-        const empty = document.createElement("p");
-        empty.textContent = "Belum ada transaksi. Yuk, catat transaksi pertamamu!";
-        empty.style.color = "#858b81";
-        transactionList.append(empty);
-        const homeEmpty = empty.cloneNode(true);
-        homeTransactionList.append(homeEmpty);
-    }
+    renderHomeTransactions(cachedTransactions);
+    renderHistoryTransactions();
 }
 
 async function openUserSession(user) {
@@ -669,6 +712,7 @@ transactionForm.addEventListener("submit", async (event) => {
         transactionForm.reset();
         renderCategoryOptions();
         setTransactionDateTimeToNow();
+        historyMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
         await loadTransactions();
 
         showMessage(transactionMessage, "Transaksi berhasil disimpan!");
@@ -718,6 +762,19 @@ async function initializeApp() {
         showMessage(loginMessage, "");
     }
 }
+
+document.getElementById("history-prev-month").addEventListener("click", () => {
+    historyMonth = new Date(historyMonth.getFullYear(), historyMonth.getMonth() - 1, 1);
+    renderHistoryTransactions();
+});
+
+document.getElementById("history-next-month").addEventListener("click", () => {
+    const nextMonth = new Date(historyMonth.getFullYear(), historyMonth.getMonth() + 1, 1);
+    if (monthKey(nextMonth) <= monthKey(new Date())) {
+        historyMonth = nextMonth;
+        renderHistoryTransactions();
+    }
+});
 
 transactionType.addEventListener("change", renderCategoryOptions);
 
