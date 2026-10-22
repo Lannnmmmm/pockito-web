@@ -835,9 +835,6 @@ function renderHomeWalletBalances() {
     }
 
     for (const wallet of currentWallets) {
-        const walletTransactions = cachedTransactions.filter(
-            (transaction) => transaction.wallet_id === wallet.id
-        );
         const walletBalance = walletRecordedBalance(wallet.id);
 
         const row = document.createElement("div");
