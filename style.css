@@ -503,3 +503,19 @@ button:disabled {
     cursor: wait;
     opacity: 0.65;
 }
+
+
+/* Keep the brand aligned with the centered authentication card. */
+.app.auth-mode .app-header {
+    max-width: 480px;
+    margin: 0 auto 22px;
+    text-align: center;
+}
+
+.app.auth-mode .eyebrow {
+    letter-spacing: 2.2px;
+}
+
+.app.auth-mode .subtitle {
+    margin-top: 8px;
+}
