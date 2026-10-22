@@ -36,6 +36,39 @@ const categoryMessage = document.getElementById("category-message");
 const categoryList = document.getElementById("category-list");
 const viewButtons = document.querySelectorAll("[data-view-target]");
 const views = document.querySelectorAll("[data-view]");
+const themeToggle = document.getElementById("theme-toggle");
+const themeToggleLabel = themeToggle.querySelector(".theme-toggle-label");
+const themeToggleIcon = themeToggle.querySelector(".theme-toggle-icon");
+
+function applyTheme(theme) {
+    const isDark = theme === "dark";
+    document.documentElement.dataset.theme = isDark ? "dark" : "light";
+    themeToggle.setAttribute("aria-pressed", String(isDark));
+    themeToggle.setAttribute(
+        "aria-label",
+        isDark ? "Aktifkan tema terang" : "Aktifkan tema gelap"
+    );
+    themeToggleLabel.textContent = isDark ? "Mode terang" : "Mode gelap";
+    themeToggleIcon.textContent = isDark ? "☀" : "☾";
+}
+
+let savedTheme = "light";
+try {
+    savedTheme = localStorage.getItem("pockito-theme") === "dark" ? "dark" : "light";
+} catch (error) {
+    console.warn("Preferensi tema tidak bisa dibaca:", error);
+}
+applyTheme(savedTheme);
+
+themeToggle.addEventListener("click", () => {
+    const nextTheme = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+    applyTheme(nextTheme);
+    try {
+        localStorage.setItem("pockito-theme", nextTheme);
+    } catch (error) {
+        console.warn("Preferensi tema tidak bisa disimpan:", error);
+    }
+});
 
 const rupiah = new Intl.NumberFormat("id-ID", {
     style: "currency",
