@@ -1587,3 +1587,72 @@ button:disabled {
     .target-icon-picker-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
     .target-edit-mini { flex-basis: 34px; width: 34px; height: 34px; min-height: 34px; }
 }
+
+
+/* Keep the target overview compact; reveal creation only on demand */
+.target-section-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 10px;
+}
+.target-section-heading h2 { margin-bottom: 0; }
+.target-section-heading .section-kicker { margin-bottom: 5px; }
+.target-create-toggle {
+    flex: 0 0 auto;
+    width: auto;
+    min-height: 40px;
+    margin: 0;
+    padding: 9px 13px;
+    border-radius: 12px;
+    font-size: 13px;
+}
+#target-form[hidden] { display: none !important; }
+#target-form {
+    margin-top: 18px;
+    padding-top: 17px;
+    border-top: 1px solid var(--border);
+}
+.target-icon-picker-collapsible {
+    padding: 11px 12px;
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+}
+.target-icon-picker-collapsible > summary {
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    list-style-position: inside;
+}
+.target-icon-picker-collapsible > summary strong {
+    font-size: 19px;
+    vertical-align: middle;
+}
+.target-icon-picker-collapsible > summary span {
+    color: var(--muted);
+    font-weight: 400;
+}
+.target-icon-picker-collapsible[open] .target-icon-picker-inline { margin: 13px 0 2px; }
+.target-create-form-actions {
+    display: flex;
+    gap: 9px;
+    margin-top: 12px;
+}
+.target-create-form-actions button {
+    flex: 1;
+    width: auto;
+    margin: 0;
+}
+.target-create-form-actions .secondary-action {
+    color: var(--text);
+    background: var(--background);
+    border: 1px solid var(--border);
+}
+@media (max-width: 420px) {
+    .target-section-heading { align-items: flex-start; }
+    .target-create-toggle { min-height: 36px; padding: 8px 10px; font-size: 12px; }
+    .target-create-form-actions { flex-direction: column-reverse; }
+    .target-create-form-actions button { width: 100%; }
+}
