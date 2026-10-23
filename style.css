@@ -1666,3 +1666,24 @@ button:disabled {
 .target-delete-action:hover {
     background: color-mix(in srgb, var(--expense) 10%, var(--surface)) !important;
 }
+
+
+/* Read-only archive for buried savings dreams */
+.target-buried-card {
+    opacity: 0.82;
+    padding-inline: 12px;
+    border: 1px dashed var(--border);
+    border-radius: 15px;
+    margin-bottom: 10px;
+}
+.target-buried-card .target-icon {
+    filter: grayscale(0.7);
+}
+.target-buried-label {
+    color: var(--muted);
+    font-size: 12px;
+    font-style: italic;
+}
+.target-bury-modal .target-complete-summary strong {
+    color: var(--text);
+}
