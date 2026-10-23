@@ -283,6 +283,45 @@ function renderSavingsTargets() {
         movementSummary.textContent = `Dana digunakan: ${rupiah.format(spent)}`;
         card.append(movementSummary);
 
+        if (targetMoves.length > 0) {
+            const history = document.createElement("details");
+            history.className = "target-history";
+            const historySummary = document.createElement("summary");
+            historySummary.textContent = `Riwayat pergerakan · ${targetMoves.length}`;
+            const historyList = document.createElement("div");
+            historyList.className = "target-history-list";
+            [...targetMoves].sort((a, b) =>
+                new Date(`${b.movement_date}T${b.created_at?.split("T")[1] || "00:00:00"}`)
+                - new Date(`${a.movement_date}T${a.created_at?.split("T")[1] || "00:00:00"}`)
+            ).forEach((movement) => {
+                const row = document.createElement("div");
+                row.className = `target-history-row target-history-${movement.movement_type}`;
+                const details = document.createElement("div");
+                details.className = "target-history-details";
+                const label = document.createElement("strong");
+                label.textContent = movement.movement_type === "deposit" ? "Dana ditambahkan"
+                    : movement.movement_type === "return" ? "Dana dikembalikan" : "Dana digunakan";
+                const wallet = currentWallets.find((item) => item.id === movement.wallet_id);
+                const note = document.createElement("small");
+                const dateLabel = movement.movement_date
+                    ? new Date(`${movement.movement_date}T00:00:00`).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })
+                    : "";
+                const walletLabel = wallet
+                    ? movement.movement_type === "deposit" ? `Dari dompet: ${wallet.name}`
+                        : movement.movement_type === "return" ? `Ke dompet: ${wallet.name}` : ""
+                    : "";
+                note.textContent = [dateLabel, walletLabel, movement.description].filter(Boolean).join(" · ");
+                details.append(label, note);
+                const amount = document.createElement("strong");
+                amount.className = "target-history-amount";
+                amount.textContent = `${movement.movement_type === "deposit" ? "+" : "−"}${rupiah.format(Number(movement.amount))}`;
+                row.append(details, amount);
+                historyList.append(row);
+            });
+            history.append(historySummary, historyList);
+            card.append(history);
+        }
+
         if (target.status === "active") {
             const actions = document.createElement("div");
             actions.className = "target-actions";
@@ -376,46 +415,122 @@ async function editSavingsTarget(target) {
     }
 }
 
+function openTargetMovementModal(target, kind, saved) {
+    return new Promise((resolve) => {
+        const isDeposit = kind === "deposit";
+        const isReturn = kind === "return";
+        const needsWallet = isDeposit || isReturn;
+        const overlay = document.createElement("div");
+        overlay.className = "target-modal-overlay";
+        overlay.innerHTML = `
+            <section class="target-modal" role="dialog" aria-modal="true" aria-labelledby="target-modal-title">
+                <button type="button" class="target-modal-close" aria-label="Tutup">×</button>
+                <p class="section-kicker">TARGET TABUNGAN</p>
+                <h2 id="target-modal-title">${isDeposit ? "Tambah dana" : isReturn ? "Kembalikan dana" : "Catat pemakaian"}</h2>
+                <p class="target-modal-description"></p>
+                <form class="target-modal-form">
+                    <div class="target-modal-wallet-field">
+                        <label for="target-modal-wallet">Pilih dompet</label>
+                        <select id="target-modal-wallet" required></select>
+                        <small class="target-modal-wallet-balance"></small>
+                    </div>
+                    <label for="target-modal-amount">Nominal (Rp)</label>
+                    <input id="target-modal-amount" type="number" min="1" step="1" inputmode="numeric" required placeholder="Contoh: 100000">
+                    <p class="target-modal-error" role="alert" hidden></p>
+                    <div class="target-modal-actions">
+                        <button type="button" class="target-modal-cancel secondary-action">Batal</button>
+                        <button type="submit" class="target-modal-submit">${isDeposit ? "Pindahkan dana" : isReturn ? "Kembalikan dana" : "Simpan pemakaian"}</button>
+                    </div>
+                </form>
+            </section>`;
+        const modal = overlay.querySelector(".target-modal");
+        const form = overlay.querySelector("form");
+        const walletField = overlay.querySelector(".target-modal-wallet-field");
+        const walletSelect = overlay.querySelector("#target-modal-wallet");
+        const walletBalance = overlay.querySelector(".target-modal-wallet-balance");
+        const amountInput = overlay.querySelector("#target-modal-amount");
+        const errorMessage = overlay.querySelector(".target-modal-error");
+        overlay.querySelector(".target-modal-description").textContent = isDeposit
+            ? `Pindahkan uang dari salah satu dompet ke “${target.name}”.`
+            : isReturn ? `Pilih dompet tujuan untuk mengembalikan dana dari “${target.name}”.`
+            : `Catat dana dari “${target.name}” yang benar-benar sudah digunakan.`;
+        walletField.hidden = !needsWallet;
+        if (needsWallet) {
+            currentWallets.forEach((wallet) => {
+                const option = document.createElement("option");
+                option.value = wallet.id;
+                option.textContent = `${wallet.name} · ${rupiah.format(walletRecordedBalance(wallet.id))}`;
+                walletSelect.append(option);
+            });
+        }
+
+        const updateWalletBalance = () => {
+            const wallet = currentWallets.find((item) => item.id === walletSelect.value);
+            if (!needsWallet || !wallet) {
+                walletBalance.textContent = `Saldo target tersedia: ${rupiah.format(saved)}`;
+                amountInput.max = String(saved);
+                return;
+            }
+            const available = walletRecordedBalance(wallet.id);
+            walletBalance.textContent = isDeposit
+                ? `Saldo tersedia: ${rupiah.format(available)}`
+                : `Dana akan dikembalikan ke saldo ${wallet.name}`;
+            amountInput.max = String(isDeposit ? available : saved);
+        };
+        walletSelect.addEventListener("change", updateWalletBalance);
+        updateWalletBalance();
+
+        let settled = false;
+        const finish = (result) => {
+            if (settled) return;
+            settled = true;
+            document.removeEventListener("keydown", onKeyDown);
+            overlay.remove();
+            resolve(result);
+        };
+        const onKeyDown = (event) => {
+            if (event.key === "Escape") finish(null);
+        };
+        overlay.addEventListener("click", (event) => {
+            if (event.target === overlay) finish(null);
+        });
+        overlay.querySelector(".target-modal-close").addEventListener("click", () => finish(null));
+        overlay.querySelector(".target-modal-cancel").addEventListener("click", () => finish(null));
+        form.addEventListener("submit", (event) => {
+            event.preventDefault();
+            const amount = Number(amountInput.value);
+            const wallet = needsWallet ? currentWallets.find((item) => item.id === walletSelect.value) : null;
+            const available = isDeposit && wallet ? walletRecordedBalance(wallet.id) : saved;
+            if (!Number.isFinite(amount) || amount <= 0 || !Number.isInteger(amount)) {
+                errorMessage.textContent = "Masukkan nominal rupiah berupa bilangan bulat yang lebih dari nol.";
+                errorMessage.hidden = false;
+                return;
+            }
+            if (amount > available) {
+                errorMessage.textContent = isDeposit
+                    ? "Saldo dompet tidak cukup untuk nominal ini."
+                    : "Nominal melebihi saldo target yang tersedia.";
+                errorMessage.hidden = false;
+                return;
+            }
+            finish({ amount, wallet });
+        });
+        document.body.append(overlay);
+        document.addEventListener("keydown", onKeyDown);
+        amountInput.focus();
+    });
+}
+
 async function moveTargetFunds(target, kind) {
     const saved = targetSavedBalance(target.id);
-    let wallet = null;
-    if (kind === "deposit" || kind === "return") {
-        if (currentWallets.length === 0) {
-            showMessage(document.getElementById("target-message"), "Buat dompet terlebih dahulu untuk memindahkan dana.", true);
-            return;
-        }
-        const choices = currentWallets.map((item, index) =>
-            `${index + 1}. ${item.name} — ${rupiah.format(walletRecordedBalance(item.id))}`
-        ).join("\n");
-        const selected = window.prompt(`Pilih nomor dompet:\n${choices}`, "1");
-        if (selected === null) return;
-        const index = Number(selected) - 1;
-        if (!Number.isInteger(index) || index < 0 || index >= currentWallets.length) {
-            showMessage(document.getElementById("target-message"), "Pilihan dompet tidak valid.", true);
-            return;
-        }
-        wallet = currentWallets[index];
-    }
-    const amountInput = window.prompt(
-        kind === "deposit" ? `Jumlah yang dipindahkan dari ${wallet.name} ke target:`
-            : kind === "return" ? `Jumlah yang dikembalikan ke ${wallet.name}:`
-            : "Jumlah dana target yang benar-benar dipakai:",
-        ""
-    );
-    if (amountInput === null) return;
-    const amount = Number(amountInput);
-    if (!Number.isFinite(amount) || amount <= 0) {
-        showMessage(document.getElementById("target-message"), "Nominal harus lebih dari nol.", true);
+    const needsWallet = kind === "deposit" || kind === "return";
+    if (needsWallet && currentWallets.length === 0) {
+        showMessage(document.getElementById("target-message"), "Buat dompet terlebih dahulu untuk memindahkan dana.", true);
         return;
     }
-    if (kind === "deposit" && amount > walletRecordedBalance(wallet.id)) {
-        showMessage(document.getElementById("target-message"), "Saldo dompet tidak cukup untuk transfer ini.", true);
-        return;
-    }
-    if (kind !== "deposit" && amount > saved) {
-        showMessage(document.getElementById("target-message"), "Saldo target tidak cukup.", true);
-        return;
-    }
+    const movement = await openTargetMovementModal(target, kind, saved);
+    if (!movement) return;
+    const { amount, wallet } = movement;
 
     let transactionId = null;
     try {
