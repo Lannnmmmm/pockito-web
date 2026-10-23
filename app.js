@@ -253,12 +253,7 @@ function renderSavingsTargets() {
         titleBlock.className = "target-title-block";
         const title = document.createElement("h3");
         title.textContent = target.name;
-        const balance = document.createElement("strong");
-        balance.className = "target-saved";
-        balance.textContent = rupiah.format(saved);
-        const targetLabel = document.createElement("small");
-        targetLabel.textContent = targetAmount ? `dari ${rupiah.format(targetAmount)}` : "Tanpa nominal target";
-        titleBlock.append(title, balance, targetLabel);
+        titleBlock.append(title);
         top.append(icon, titleBlock);
         card.append(top);
 
@@ -275,13 +270,31 @@ function renderSavingsTargets() {
             card.append(track, percent);
         }
 
-        const movementSummary = document.createElement("small");
         const targetMoves = cachedTargetMovements.filter((item) => item.target_id === target.id);
+        const deposited = targetMoves.filter((item) => item.movement_type === "deposit")
+            .reduce((sum, item) => sum + Number(item.amount), 0);
         const spent = targetMoves.filter((item) => item.movement_type === "spend")
             .reduce((sum, item) => sum + Number(item.amount), 0);
-        movementSummary.className = "target-movement-summary";
-        movementSummary.textContent = `Dana digunakan: ${rupiah.format(spent)}`;
-        card.append(movementSummary);
+
+        const stats = document.createElement("div");
+        stats.className = "target-stats-grid";
+        const statItems = [
+            { label: "Dana dipindah", value: rupiah.format(deposited), className: "target-stat-deposited" },
+            { label: "Total target", value: targetAmount === null ? "Belum diatur" : rupiah.format(targetAmount), className: "target-stat-goal" },
+            { label: "Dana dipakai", value: rupiah.format(spent), className: "target-stat-spent" },
+            { label: "Dana saat ini", value: rupiah.format(saved), className: "target-stat-current" }
+        ];
+        statItems.forEach((item) => {
+            const stat = document.createElement("div");
+            stat.className = `target-stat ${item.className}`;
+            const label = document.createElement("small");
+            label.textContent = item.label;
+            const value = document.createElement("strong");
+            value.textContent = item.value;
+            stat.append(label, value);
+            stats.append(stat);
+        });
+        card.append(stats);
 
         if (targetMoves.length > 0) {
             const history = document.createElement("details");
