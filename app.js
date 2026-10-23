@@ -1667,9 +1667,9 @@ let historyMonth = new Date();
 historyMonth = new Date(historyMonth.getFullYear(), historyMonth.getMonth(), 1);
 let cachedTransactions = [];
 
-function createTransactionItem(transaction) {
+function createTransactionItem(transaction, compact = false) {
     const item = document.createElement("div");
-    item.className = "transaction-item";
+    item.className = compact ? "transaction-item home-transaction-item" : "transaction-item";
 
     const info = document.createElement("div");
     info.className = "transaction-info";
@@ -1698,7 +1698,11 @@ function createTransactionItem(transaction) {
     const sign = transaction.type === "income" ? "+" : "−";
     value.textContent = `${sign}${rupiah.format(Number(transaction.amount))}`;
 
-    info.append(description, categoryLabel, date, walletLabel);
+    if (compact) {
+        info.append(description, categoryLabel, date);
+    } else {
+        info.append(description, categoryLabel, date, walletLabel);
+    }
     item.append(info, value);
     return item;
 }
@@ -1739,7 +1743,7 @@ function renderHomeWalletBalances() {
 
 function renderHomeTransactions(transactions) {
     homeTransactionList.replaceChildren();
-    const latest = transactions.slice(0, 5);
+    const latest = transactions.slice(0, 3);
 
     if (latest.length === 0) {
         const empty = document.createElement("p");
@@ -1750,7 +1754,7 @@ function renderHomeTransactions(transactions) {
     }
 
     for (const transaction of latest) {
-        homeTransactionList.append(createTransactionItem(transaction));
+        homeTransactionList.append(createTransactionItem(transaction, true));
     }
 }
 
