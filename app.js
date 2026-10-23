@@ -451,9 +451,9 @@ function openTargetMovementModal(target, kind, saved) {
         const amountInput = overlay.querySelector("#target-modal-amount");
         const errorMessage = overlay.querySelector(".target-modal-error");
         overlay.querySelector(".target-modal-description").textContent = isDeposit
-            ? `Pindahkan uang dari salah satu dompet ke “${target.name}”.`
-            : isReturn ? `Pilih dompet tujuan untuk mengembalikan dana dari “${target.name}”.`
-            : `Catat dana dari “${target.name}” yang benar-benar sudah digunakan.`;
+            ? "Pindahkan uang dari salah satu dompet ke target ini."
+            : isReturn ? "Pilih dompet tujuan untuk mengembalikan dana dari target ini."
+            : "Catat dana dari target ini yang benar-benar sudah digunakan.";
         walletField.hidden = !needsWallet;
         if (needsWallet) {
             currentWallets.forEach((wallet) => {
