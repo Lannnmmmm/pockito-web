@@ -197,14 +197,17 @@ fileInput.addEventListener("change", async () => {
         setScanStatus("Menyiapkan PaddleOCR PP-OCRv5... model OCR mungkin perlu diunduh saat pertama kali.");
         if (!ocrEnginePromise) {
             ocrEnginePromise = PaddleOCR.create({
-                lang: "id",
-                ocrVersion: "PP-OCRv5",
+                textDetectionModelName: "PP-OCRv5_mobile_det",
+                textRecognitionModelName: "PP-OCRv5_mobile_rec",
                 ortOptions: {
-                    backend: "wasm",
-                    wasmPaths: "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/",
-                    numThreads: 2,
+                    backend: "auto",
+                    wasmPaths: "https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/",
+                    numThreads: 1,
                     simd: true
                 }
+            }).catch((error) => {
+                ocrEnginePromise = null;
+                throw error;
             });
         }
         const ocr = await ocrEnginePromise;
@@ -235,7 +238,8 @@ fileInput.addEventListener("change", async () => {
         setScanStatus(`OCR selesai: ${itemNote}; ${totalNote}. Periksa hasilnya di bawah.`);
     } catch (error) {
         console.error("Receipt OCR failed:", error);
-        setScanStatus("Scan gagal. Periksa koneksi internet lalu coba foto yang lebih terang dan lurus.", true);
+        const reason = error instanceof Error ? error.message : String(error);
+        setScanStatus(`Scan gagal: ${reason}. Periksa koneksi atau coba lagi.`, true);
     } finally {
         scanButton.disabled = false;
     }
