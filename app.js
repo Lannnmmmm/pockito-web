@@ -134,6 +134,12 @@ function isMissingTargetIconColumn(error) {
     return message.includes("icon") &&
         (message.includes("column") || message.includes("schema cache") || message.includes("does not exist"));
 }
+
+function isMissingTargetDeletedAtColumn(error) {
+    const message = String(error?.message || "").toLowerCase();
+    return message.includes("deleted_at") &&
+        (message.includes("column") || message.includes("schema cache") || message.includes("does not exist"));
+}
 let reportMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 
 function localDateTimeValues() {
@@ -295,13 +301,32 @@ async function loadSavingsTargets() {
     let loadedTargets = [];
     const { data: targets, error: targetError } = await supabase
         .from("savings_targets")
-        .select("id, name, target_amount, icon, status, created_at, completed_at")
+        .select("id, name, target_amount, icon, status, created_at, completed_at, deleted_at")
         .eq("user_id", currentUser.id)
+        .is("deleted_at", null)
         .order("created_at", { ascending: false });
-    if (targetError && isMissingTargetIconColumn(targetError)) {
-        const fallback = await supabase.from("savings_targets")
-            .select("id, name, target_amount, status, created_at, completed_at")
+    if (targetError && isMissingTargetDeletedAtColumn(targetError)) {
+        const legacy = await supabase.from("savings_targets")
+            .select("id, name, target_amount, icon, status, created_at, completed_at")
             .eq("user_id", currentUser.id)
+            .order("created_at", { ascending: false });
+        if (legacy.error && isMissingTargetIconColumn(legacy.error)) {
+            const fallback = await supabase.from("savings_targets")
+                .select("id, name, target_amount, status, created_at, completed_at")
+                .eq("user_id", currentUser.id)
+                .order("created_at", { ascending: false });
+            if (fallback.error) throw fallback.error;
+            loadedTargets = (fallback.data || []).map((target) => ({ ...target, icon: "🐷", deleted_at: null }));
+        } else if (legacy.error) {
+            throw legacy.error;
+        } else {
+            loadedTargets = (legacy.data || []).map((target) => ({ ...target, deleted_at: null }));
+        }
+    } else if (targetError && isMissingTargetIconColumn(targetError)) {
+        const fallback = await supabase.from("savings_targets")
+            .select("id, name, target_amount, status, created_at, completed_at, deleted_at")
+            .eq("user_id", currentUser.id)
+            .is("deleted_at", null)
             .order("created_at", { ascending: false });
         if (fallback.error) throw fallback.error;
         loadedTargets = (fallback.data || []).map((target) => ({ ...target, icon: "🐷" }));
@@ -350,16 +375,14 @@ function renderSavingsTargets() {
         title.textContent = target.name;
         titleBlock.append(title);
         top.append(icon, titleBlock);
-        if (target.status === "active") {
-            const editMini = document.createElement("button");
-            editMini.type = "button";
-            editMini.className = "target-edit-mini";
-            editMini.textContent = "✎";
-            editMini.setAttribute("aria-label", `Edit target ${target.name}`);
-            editMini.title = "Edit target";
-            editMini.addEventListener("click", () => editSavingsTarget(target));
-            top.append(editMini);
-        }
+        const editMini = document.createElement("button");
+        editMini.type = "button";
+        editMini.className = "target-edit-mini";
+        editMini.textContent = "✎";
+        editMini.setAttribute("aria-label", `Edit target ${target.name}`);
+        editMini.title = "Edit target";
+        editMini.addEventListener("click", () => editSavingsTarget(target));
+        top.append(editMini);
         card.append(top);
 
         if (progress !== null) {
@@ -468,7 +491,12 @@ function renderSavingsTargets() {
             complete.className = "secondary-action";
             complete.textContent = "Tandai selesai";
             complete.addEventListener("click", () => completeSavingsTarget(target));
-            actions.append(deposit, returnFunds, spend, complete);
+            const deleteButton = document.createElement("button");
+            deleteButton.type = "button";
+            deleteButton.className = "secondary-action target-delete-action";
+            deleteButton.textContent = "Hapus target";
+            deleteButton.addEventListener("click", () => deleteSavingsTarget(target));
+            actions.append(deposit, returnFunds, spend, complete, deleteButton);
             card.append(actions);
             activeList.append(card);
         } else {
@@ -478,6 +506,21 @@ function renderSavingsTargets() {
                 ? `Selesai ${new Date(target.completed_at).toLocaleDateString("id-ID")}`
                 : "Selesai";
             card.append(completed);
+
+            const actions = document.createElement("div");
+            actions.className = "target-actions";
+            const reopen = document.createElement("button");
+            reopen.type = "button";
+            reopen.className = "secondary-action";
+            reopen.textContent = "↶ Batalkan selesai";
+            reopen.addEventListener("click", () => reopenSavingsTarget(target));
+            const deleteButton = document.createElement("button");
+            deleteButton.type = "button";
+            deleteButton.className = "secondary-action target-delete-action";
+            deleteButton.textContent = "Hapus target";
+            deleteButton.addEventListener("click", () => deleteSavingsTarget(target));
+            actions.append(reopen, deleteButton);
+            card.append(actions);
             completedList.append(card);
         }
     }
@@ -511,7 +554,7 @@ async function editSavingsTarget(target) {
             <button type="button" class="target-modal-close" aria-label="Tutup">×</button>
             <p class="section-kicker">PERSONALISASI TARGET</p>
             <h2 id="edit-target-title">Edit target</h2>
-            <p class="target-modal-description">Atur nama, nominal, dan ikon yang paling mewakili tujuanmu.</p>
+            <p class="target-modal-description">Atur nama, nominal, dan ikon yang paling mewakili tujuanmu. Target selesai juga bisa diedit tanpa mengubah riwayat dana.</p>
             <form class="target-modal-form">
                 <label for="edit-target-name">Nama target</label>
                 <input id="edit-target-name" type="text" maxlength="80" required>
@@ -564,11 +607,17 @@ async function editSavingsTarget(target) {
         try {
             let result = await supabase.from("savings_targets")
                 .update({ name, target_amount: targetAmount, icon: selectedIcon })
-                .eq("id", target.id).eq("user_id", currentUser.id).eq("status", "active");
+                .eq("id", target.id).eq("user_id", currentUser.id).is("deleted_at", null);
             if (result.error && isMissingTargetIconColumn(result.error)) {
                 result = await supabase.from("savings_targets")
                     .update({ name, target_amount: targetAmount })
-                    .eq("id", target.id).eq("user_id", currentUser.id).eq("status", "active");
+                    .eq("id", target.id).eq("user_id", currentUser.id).is("deleted_at", null);
+            }
+            if (result.error && isMissingTargetDeletedAtColumn(result.error)) {
+                errorMessage.textContent = "Jalankan migrasi Pockito terbaru di Supabase dulu agar fitur target bisa digunakan.";
+                errorMessage.hidden = false;
+                submit.disabled = false;
+                return;
             }
             if (result.error) throw result.error;
             close();
@@ -581,6 +630,43 @@ async function editSavingsTarget(target) {
             submit.disabled = false;
         }
     });
+}
+
+async function reopenSavingsTarget(target) {
+    if (!window.confirm(`Batalkan status selesai untuk target "${target.name}" dan aktifkan kembali?`)) return;
+    try {
+        const { error } = await supabase.from("savings_targets")
+            .update({ status: "active", completed_at: null })
+            .eq("id", target.id).eq("user_id", currentUser.id).eq("status", "completed").is("deleted_at", null);
+        if (error) throw error;
+        await loadSavingsTargets();
+        showMessage(document.getElementById("target-message"), "Target diaktifkan kembali. Riwayat tetap tersimpan.");
+    } catch (error) {
+        console.error("Gagal mengaktifkan kembali target:", error);
+        showMessage(document.getElementById("target-message"), "Target gagal diaktifkan kembali. Pastikan migrasi terbaru sudah diterapkan.", true);
+    }
+}
+
+async function deleteSavingsTarget(target) {
+    const movementCount = cachedTargetMovements.filter((item) => item.target_id === target.id).length;
+    const detail = movementCount
+        ? `\n\nRiwayat ${movementCount} pergerakan dana akan disimpan sebagai catatan internal agar perhitungan saldo dompet tetap akurat, tetapi target ini akan disembunyikan dari daftar.`
+        : "\n\nTarget akan disembunyikan dari daftar.";
+    const transactionNote = "\nTransaksi pengeluaran yang sudah masuk ke riwayat transaksi tidak akan dihapus.";
+    if (!window.confirm(`Hapus target "${target.name}"? Tindakan ini menyembunyikannya dari daftar target dan tidak bisa dibatalkan lewat aplikasi.${detail}${transactionNote}`)) return;
+    try {
+        const { error } = await supabase.from("savings_targets")
+            .update({ deleted_at: new Date().toISOString() })
+            .eq("id", target.id).eq("user_id", currentUser.id).is("deleted_at", null);
+        if (error) throw error;
+        await loadSavingsTargets();
+        await loadTransactions();
+        await loadWallets();
+        showMessage(document.getElementById("target-message"), "Target dihapus dari daftar. Catatan keuangan tetap dipertahankan.");
+    } catch (error) {
+        console.error("Gagal menghapus target:", error);
+        showMessage(document.getElementById("target-message"), "Target gagal dihapus. Jalankan migrasi target terbaru di Supabase, lalu coba lagi.", true);
+    }
 }
 
 function openTargetMovementModal(target, kind, saved) {
