@@ -243,7 +243,7 @@ function showPasswordRecovery() {
 async function loadWallets() {
     const { data: wallets, error } = await supabase
         .from("wallets")
-        .select("id, name, balance, created_at")
+        .select("id, name, balance, created_at, icon, color")
         .eq("user_id", currentUser.id)
         .order("created_at", { ascending: true });
 
@@ -1256,85 +1256,169 @@ async function completeSavingsTarget(target) {
     }
 }
 
+const WALLET_ICONS = {
+    bank: { label: "Bank", paths: '<rect x="3" y="9" width="18" height="11" rx="1.5"/><path d="M2 9 12 3l10 6M7 12v5M12 12v5M17 12v5M2 21h20"/>' },
+    smartphone: { label: "Digital", paths: '<rect x="6" y="2" width="12" height="20" rx="2"/><path d="M10 5h4M11 18h2"/>' },
+    wallet: { label: "Tunai", paths: '<path d="M4 6h15a2 2 0 0 1 2 2v11H5a3 3 0 0 1-3-3V5a2 2 0 0 1 2-2h14"/><path d="M16 11h5v4h-5a2 2 0 0 1 0-4Z"/>' },
+    piggy: { label: "Tabungan", paths: '<path d="M5 10 3 8M4 13H2v4h3l2 3h9l2-3h2v-7l-3-3H9L6 9Z"/><path d="M9 7 8 4l5 2M16 11h.01M8 20v2M16 20v2M21 12h1"/>' },
+    card: { label: "Kartu", paths: '<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/>' },
+    coins: { label: "Dana", paths: '<ellipse cx="9" cy="6" rx="6" ry="3"/><path d="M3 6v5c0 1.7 2.7 3 6 3s6-1.3 6-3V6M3 11v5c0 1.7 2.7 3 6 3 1.2 0 2.3-.2 3.2-.6"/><circle cx="17" cy="16" r="4"/><path d="M17 14v4M15.5 15h3"/>' },
+    landmark: { label: "Gedung", paths: '<path d="M3 21h18M5 21V9M9 21V9M15 21V9M19 21V9M2 9l10-6 10 6Z"/><path d="M2 13h20"/>' }
+};
+const WALLET_COLORS = [
+    { value: "#DDF5E7", label: "Mint" }, { value: "#E3EAFE", label: "Biru" },
+    { value: "#FCE7D6", label: "Peach" }, { value: "#EDE3FA", label: "Lavender" },
+    { value: "#F9DFE9", label: "Pink" }, { value: "#DDF2F5", label: "Aqua" },
+    { value: "#F6F0CE", label: "Kuning" }, { value: "#E9E7E2", label: "Abu-abu" }
+];
+
 function walletIcon(name) {
     const normalized = name.toLocaleLowerCase("id-ID");
-    if (normalized.includes("tunai") || normalized.includes("cash")) return "💵";
-    if (normalized.includes("tabungan") || normalized.includes("nabung")) return "🐷";
-    if (normalized.includes("seabank") || normalized.includes("sea bank")) return "🌊";
-    if (normalized.includes("bri") || normalized.includes("bca") ||
-        normalized.includes("bni") || normalized.includes("bsi") ||
-        normalized.includes("mandiri") || normalized.includes("bank")) return "🏦";
-    if (normalized.includes("ewallet") || normalized.includes("e-wallet") ||
-        normalized.includes("gopay") || normalized.includes("ovo") ||
-        normalized.includes("dana") || normalized.includes("shopeepay")) return "📱";
-    return "👛";
+    if (normalized.includes("tunai") || normalized.includes("cash")) return "wallet";
+    if (normalized.includes("tabungan") || normalized.includes("nabung")) return "piggy";
+    if (normalized.includes("seabank") || normalized.includes("sea bank")) return "smartphone";
+    if (normalized.includes("bri") || normalized.includes("bca") || normalized.includes("bni") ||
+        normalized.includes("bsi") || normalized.includes("mandiri") || normalized.includes("bank")) return "bank";
+    if (normalized.includes("ewallet") || normalized.includes("e-wallet") || normalized.includes("gopay") ||
+        normalized.includes("ovo") || normalized.includes("dana") || normalized.includes("shopeepay")) return "smartphone";
+    return "wallet";
+}
+
+function createWalletIcon(iconKey, color, className = "wallet-icon") {
+    const key = WALLET_ICONS[iconKey] ? iconKey : "wallet";
+    const background = WALLET_COLORS.some((item) => item.value === color) ? color : "#DDF5E7";
+    const wrapper = document.createElement("span");
+    wrapper.className = className;
+    wrapper.style.setProperty("--wallet-color", background);
+    wrapper.setAttribute("aria-hidden", "true");
+    wrapper.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${WALLET_ICONS[key].paths}</svg>`;
+    return wrapper;
+}
+
+function openWalletEditDialog(wallet) {
+    return new Promise((resolve) => {
+        const overlay = document.createElement("div");
+        overlay.className = "wallet-modal-overlay";
+        overlay.innerHTML = `<section class="wallet-modal" role="dialog" aria-modal="true" aria-labelledby="wallet-dialog-title">
+            <button type="button" class="wallet-modal-close" aria-label="Tutup">×</button>
+            <p class="section-kicker">IDENTITAS DOMPET</p><h2 id="wallet-dialog-title">Edit dompet</h2>
+            <p class="panel-description">Ubah nama, ikon, dan warna agar mudah dikenali.</p>
+            <form class="wallet-modal-form">
+                <label for="wallet-edit-name">Nama dompet</label><input id="wallet-edit-name" type="text" maxlength="60" required>
+                <fieldset class="wallet-choice-field"><legend>Ikon</legend><div class="wallet-icon-picker"></div></fieldset>
+                <fieldset class="wallet-choice-field"><legend>Warna identitas</legend><div class="wallet-color-picker"></div></fieldset>
+                <p class="wallet-modal-error" role="alert" hidden></p>
+                <div class="wallet-modal-actions"><button type="button" class="secondary-action wallet-modal-cancel">Batal</button><button type="submit" class="wallet-modal-submit">Simpan perubahan</button></div>
+            </form></section>`;
+        const form = overlay.querySelector("form");
+        const nameInput = overlay.querySelector("#wallet-edit-name");
+        const iconPicker = overlay.querySelector(".wallet-icon-picker");
+        const colorPicker = overlay.querySelector(".wallet-color-picker");
+        const errorMessage = overlay.querySelector(".wallet-modal-error");
+        let selectedIcon = WALLET_ICONS[wallet.icon] ? wallet.icon : walletIcon(wallet.name);
+        let selectedColor = WALLET_COLORS.some((item) => item.value === wallet.color) ? wallet.color : "#DDF5E7";
+        nameInput.value = wallet.name;
+        const renderChoices = () => {
+            iconPicker.replaceChildren();
+            Object.entries(WALLET_ICONS).forEach(([key, definition]) => {
+                const button = document.createElement("button");
+                button.type = "button"; button.className = "wallet-icon-choice";
+                button.classList.toggle("selected", key === selectedIcon);
+                button.setAttribute("aria-pressed", String(key === selectedIcon));
+                button.setAttribute("aria-label", definition.label); button.title = definition.label;
+                button.append(createWalletIcon(key, selectedColor, "wallet-choice-icon"));
+                const label = document.createElement("small"); label.textContent = definition.label; button.append(label);
+                button.addEventListener("click", () => { selectedIcon = key; renderChoices(); });
+                iconPicker.append(button);
+            });
+            colorPicker.replaceChildren();
+            WALLET_COLORS.forEach((color) => {
+                const button = document.createElement("button");
+                button.type = "button"; button.className = "wallet-color-choice";
+                button.style.setProperty("--swatch-color", color.value);
+                button.classList.toggle("selected", color.value === selectedColor);
+                button.setAttribute("aria-label", color.label); button.title = color.label;
+                button.setAttribute("aria-pressed", String(color.value === selectedColor));
+                button.addEventListener("click", () => { selectedColor = color.value; renderChoices(); });
+                colorPicker.append(button);
+            });
+        };
+        renderChoices();
+        let settled = false;
+        const finish = (result) => { if (settled) return; settled = true; document.removeEventListener("keydown", onKeyDown); overlay.remove(); resolve(result); };
+        const onKeyDown = (event) => { if (event.key === "Escape") finish(null); };
+        overlay.addEventListener("click", (event) => { if (event.target === overlay) finish(null); });
+        overlay.querySelector(".wallet-modal-close").addEventListener("click", () => finish(null));
+        overlay.querySelector(".wallet-modal-cancel").addEventListener("click", () => finish(null));
+        form.addEventListener("submit", (event) => {
+            event.preventDefault();
+            const name = nameInput.value.trim();
+            if (!name) { errorMessage.textContent = "Nama dompet tidak boleh kosong."; errorMessage.hidden = false; return; }
+            if (currentWallets.some((item) => item.id !== wallet.id && item.name.toLocaleLowerCase("id-ID") === name.toLocaleLowerCase("id-ID"))) {
+                errorMessage.textContent = "Nama dompet itu sudah ada."; errorMessage.hidden = false; return;
+            }
+            finish({ name, icon: selectedIcon, color: selectedColor });
+        });
+        document.addEventListener("keydown", onKeyDown);
+        document.body.append(overlay); nameInput.focus();
+    });
 }
 
 async function renameWallet(wallet) {
-    const proposedName = window.prompt("Masukkan nama baru untuk dompet ini:", wallet.name);
-    if (proposedName === null) return;
-    const name = proposedName.trim();
-    if (!name) {
-        showMessage(walletMessage, "Nama dompet tidak boleh kosong.", true);
-        return;
-    }
-    if (currentWallets.some((item) => item.id !== wallet.id &&
-        item.name.toLocaleLowerCase("id-ID") === name.toLocaleLowerCase("id-ID"))) {
-        showMessage(walletMessage, "Nama dompet itu sudah ada.", true);
-        return;
-    }
-
+    const changes = await openWalletEditDialog(wallet);
+    if (!changes) return;
     try {
-        const { error } = await supabase.from("wallets")
-            .update({ name })
-            .eq("id", wallet.id)
-            .eq("user_id", currentUser.id);
+        const { error } = await supabase.from("wallets").update(changes).eq("id", wallet.id).eq("user_id", currentUser.id);
         if (error) throw error;
-        await loadWallets();
-        renderHomeTransactions(cachedTransactions);
-        renderHistoryTransactions();
-        renderHomeWalletBalances();
-        showMessage(walletMessage, `Nama dompet berhasil diubah menjadi "${name}".`);
+        await loadWallets(); renderHomeTransactions(cachedTransactions); renderHistoryTransactions(); renderHomeWalletBalances();
+        showMessage(walletMessage, `Dompet "${changes.name}" berhasil diperbarui.`);
     } catch (error) {
-        console.error("Gagal mengubah nama dompet:", error);
-        showMessage(walletMessage, "Nama dompet gagal diubah. Coba lagi.", true);
+        console.error("Gagal mengubah dompet:", error);
+        showMessage(walletMessage, "Dompet gagal diperbarui. Pastikan migrasi ikon dan warna sudah dijalankan.", true);
     }
+}
+
+function openWalletDeleteDialog(wallet, linkedCount) {
+    return new Promise((resolve) => {
+        const overlay = document.createElement("div");
+        overlay.className = "wallet-modal-overlay";
+        overlay.innerHTML = `<section class="wallet-modal wallet-delete-modal" role="dialog" aria-modal="true" aria-labelledby="wallet-delete-title">
+            <button type="button" class="wallet-modal-close" aria-label="Tutup">×</button>
+            <div class="wallet-delete-symbol"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 15h10l1-15M10 10v7M14 10v7"/></svg></div>
+            <p class="section-kicker">KONFIRMASI</p><h2 id="wallet-delete-title">Hapus dompet?</h2><p class="panel-description"></p><div class="wallet-delete-note"></div>
+            <div class="wallet-modal-actions"><button type="button" class="secondary-action wallet-modal-cancel">Batal</button><button type="button" class="wallet-modal-submit wallet-confirm-delete">Ya, hapus dompet</button></div>
+            </section>`;
+        overlay.querySelector(".panel-description").textContent = `Kamu akan menghapus dompet “${wallet.name}”.`;
+        overlay.querySelector(".wallet-delete-note").textContent = linkedCount > 0
+            ? `${linkedCount} transaksi terkait tetap tersimpan di riwayat, tetapi tidak lagi terhubung ke dompet ini. Data transaksi tidak dihapus.`
+            : "Tidak ada transaksi yang terhubung. Dompet ini akan dihapus.";
+        let settled = false;
+        const finish = (result) => { if (settled) return; settled = true; document.removeEventListener("keydown", onKeyDown); overlay.remove(); resolve(result); };
+        const onKeyDown = (event) => { if (event.key === "Escape") finish(false); };
+        overlay.addEventListener("click", (event) => { if (event.target === overlay) finish(false); });
+        overlay.querySelector(".wallet-modal-close").addEventListener("click", () => finish(false));
+        overlay.querySelector(".wallet-modal-cancel").addEventListener("click", () => finish(false));
+        overlay.querySelector(".wallet-confirm-delete").addEventListener("click", () => finish(true));
+        document.addEventListener("keydown", onKeyDown); document.body.append(overlay);
+    });
 }
 
 async function deleteWallet(wallet) {
     const linkedCount = cachedTransactions.filter((transaction) => transaction.wallet_id === wallet.id).length;
-    const explanation = linkedCount > 0
-        ? `Dompet "${wallet.name}" memiliki ${linkedCount} transaksi. Transaksi akan tetap tersimpan di riwayat, tetapi tidak lagi terhubung ke dompet ini. Hapus dompet?`
-        : `Hapus dompet "${wallet.name}"?`;
-    if (!window.confirm(explanation)) return;
-
+    if (!await openWalletDeleteDialog(wallet, linkedCount)) return;
     try {
         if (linkedCount > 0) {
-            const { error: detachError } = await supabase.from("transactions")
-                .update({ wallet_id: null })
-                .eq("wallet_id", wallet.id)
-                .eq("user_id", currentUser.id);
+            const { error: detachError } = await supabase.from("transactions").update({ wallet_id: null }).eq("wallet_id", wallet.id).eq("user_id", currentUser.id);
             if (detachError) throw detachError;
         }
-
-        const { error } = await supabase.from("wallets")
-            .delete()
-            .eq("id", wallet.id)
-            .eq("user_id", currentUser.id);
+        const { error } = await supabase.from("wallets").delete().eq("id", wallet.id).eq("user_id", currentUser.id);
         if (error) throw error;
-
-        await loadWallets();
-        await loadTransactions();
+        await loadWallets(); await loadTransactions();
         showMessage(walletMessage, `Dompet "${wallet.name}" berhasil dihapus. Riwayat transaksi tetap tersimpan.`);
     } catch (error) {
         console.error("Gagal menghapus dompet:", error);
         showMessage(walletMessage, "Dompet gagal dihapus. Riwayat transaksi tetap dipertahankan; coba lagi.", true);
-        try {
-            await loadWallets();
-            await loadTransactions();
-        } catch (refreshError) {
-            console.error("Gagal memuat ulang setelah penghapusan dompet:", refreshError);
-        }
+        try { await loadWallets(); await loadTransactions(); } catch (refreshError) { console.error("Gagal memuat ulang setelah penghapusan dompet:", refreshError); }
     }
 }
 
@@ -1367,10 +1451,7 @@ function renderWalletList() {
         const identity = document.createElement("div");
         identity.className = "wallet-identity";
 
-        const icon = document.createElement("span");
-        icon.className = "wallet-icon";
-        icon.setAttribute("aria-hidden", "true");
-        icon.textContent = walletIcon(wallet.name);
+        const icon = createWalletIcon(wallet.icon || walletIcon(wallet.name), wallet.color);
 
         const details = document.createElement("div");
         details.className = "wallet-item-details";
@@ -1389,26 +1470,26 @@ function renderWalletList() {
         details.append(name, balance, totals);
         identity.append(icon, details);
 
-        const actions = document.createElement("div");
-        actions.className = "wallet-actions";
-
+        const actions = document.createElement("details");
+        actions.className = "wallet-actions-menu";
+        const menuToggle = document.createElement("summary");
+        menuToggle.className = "wallet-action-button";
+        menuToggle.textContent = "⋮";
+        menuToggle.title = `Kelola ${wallet.name}`;
+        menuToggle.setAttribute("aria-label", `Kelola ${wallet.name}`);
+        const menu = document.createElement("div");
+        menu.className = "wallet-actions-popover";
         const renameButton = document.createElement("button");
         renameButton.type = "button";
-        renameButton.className = "wallet-action-button";
-        renameButton.textContent = "✏️";
-        renameButton.title = `Ubah nama ${wallet.name}`;
-        renameButton.setAttribute("aria-label", `Ubah nama ${wallet.name}`);
-        renameButton.addEventListener("click", () => renameWallet(wallet));
-
+        renameButton.textContent = "Edit dompet";
+        renameButton.addEventListener("click", () => { actions.open = false; renameWallet(wallet); });
         const deleteButton = document.createElement("button");
         deleteButton.type = "button";
-        deleteButton.className = "wallet-action-button wallet-delete-button";
-        deleteButton.textContent = "🗑️";
-        deleteButton.title = `Hapus ${wallet.name}`;
-        deleteButton.setAttribute("aria-label", `Hapus ${wallet.name}`);
-        deleteButton.addEventListener("click", () => deleteWallet(wallet));
-
-        actions.append(renameButton, deleteButton);
+        deleteButton.className = "wallet-delete-button";
+        deleteButton.textContent = "Hapus dompet";
+        deleteButton.addEventListener("click", () => { actions.open = false; deleteWallet(wallet); });
+        menu.append(renameButton, deleteButton);
+        actions.append(menuToggle, menu);
         item.append(identity, actions);
         walletList.append(item);
     }
@@ -1617,10 +1698,7 @@ function renderHomeWalletBalances() {
 
         const identity = document.createElement("span");
         identity.className = "home-wallet-identity";
-        const icon = document.createElement("span");
-        icon.className = "wallet-icon home-wallet-icon";
-        icon.setAttribute("aria-hidden", "true");
-        icon.textContent = walletIcon(wallet.name);
+        const icon = createWalletIcon(wallet.icon || walletIcon(wallet.name), wallet.color, "wallet-icon home-wallet-icon");
         const name = document.createElement("span");
         name.textContent = wallet.name;
         identity.append(icon, name);
@@ -2310,51 +2388,75 @@ document.getElementById("target-form").addEventListener("submit", async (event) 
     }
 });
 
+const walletAddToggle = document.getElementById("wallet-add-toggle");
+const walletAddClose = document.getElementById("wallet-add-close");
+const walletAddCancel = document.getElementById("wallet-add-cancel");
+const walletAddIconPicker = document.getElementById("wallet-add-icon-picker");
+const walletAddColorPicker = document.getElementById("wallet-add-color-picker");
+const walletIconValue = document.getElementById("wallet-icon-value");
+const walletColorValue = document.getElementById("wallet-color-value");
+
+function setWalletFormVisible(visible) {
+    walletForm.hidden = !visible;
+    walletAddToggle.hidden = visible;
+    if (visible) walletNameInput.focus();
+    else walletAddToggle.focus();
+}
+function renderWalletAddChoices() {
+    walletAddIconPicker.replaceChildren();
+    Object.entries(WALLET_ICONS).forEach(([key, definition]) => {
+        const button = document.createElement("button");
+        button.type = "button"; button.className = "wallet-icon-choice";
+        button.classList.toggle("selected", walletIconValue.value === key);
+        button.setAttribute("aria-pressed", String(walletIconValue.value === key));
+        button.setAttribute("aria-label", definition.label); button.title = definition.label;
+        button.append(createWalletIcon(key, walletColorValue.value, "wallet-choice-icon"));
+        const label = document.createElement("small"); label.textContent = definition.label; button.append(label);
+        button.addEventListener("click", () => { walletIconValue.value = key; renderWalletAddChoices(); });
+        walletAddIconPicker.append(button);
+    });
+    walletAddColorPicker.replaceChildren();
+    WALLET_COLORS.forEach((color) => {
+        const button = document.createElement("button");
+        button.type = "button"; button.className = "wallet-color-choice";
+        button.style.setProperty("--swatch-color", color.value);
+        button.classList.toggle("selected", walletColorValue.value === color.value);
+        button.setAttribute("aria-label", color.label); button.title = color.label;
+        button.setAttribute("aria-pressed", String(walletColorValue.value === color.value));
+        button.addEventListener("click", () => { walletColorValue.value = color.value; renderWalletAddChoices(); });
+        walletAddColorPicker.append(button);
+    });
+}
+renderWalletAddChoices();
+walletAddToggle.addEventListener("click", () => setWalletFormVisible(true));
+walletAddClose.addEventListener("click", () => setWalletFormVisible(false));
+walletAddCancel.addEventListener("click", () => setWalletFormVisible(false));
+
 walletForm.addEventListener("submit", async (event) => {
     event.preventDefault();
-
-    if (!currentUser) {
-        showMessage(walletMessage, "Silakan masuk kembali.", true);
-        return;
-    }
-
+    if (!currentUser) { showMessage(walletMessage, "Silakan masuk kembali.", true); return; }
     const name = walletNameInput.value.trim();
     const submitButton = walletForm.querySelector('button[type="submit"]');
-
-    if (!name) {
-        showMessage(walletMessage, "Isi nama dompet terlebih dahulu.", true);
-        walletNameInput.focus();
-        return;
+    if (!name) { showMessage(walletMessage, "Isi nama dompet terlebih dahulu.", true); walletNameInput.focus(); return; }
+    if (currentWallets.some((wallet) => wallet.name.toLocaleLowerCase("id-ID") === name.toLocaleLowerCase("id-ID"))) {
+        showMessage(walletMessage, "Nama dompet itu sudah ada.", true); return;
     }
-
-    if (currentWallets.some((wallet) => wallet.name.toLocaleLowerCase() === name.toLocaleLowerCase())) {
-        showMessage(walletMessage, "Nama dompet itu sudah ada.", true);
-        return;
-    }
-
     submitButton.disabled = true;
     showMessage(walletMessage, "Menyimpan dompet...");
-
     try {
-        const { error } = await supabase
-            .from("wallets")
-            .insert({
-                user_id: currentUser.id,
-                name,
-                balance: 0
-            });
-
+        const { error } = await supabase.from("wallets").insert({
+            user_id: currentUser.id, name, balance: 0,
+            icon: walletIconValue.value, color: walletColorValue.value
+        });
         if (error) throw error;
-
         await loadWallets();
-        walletNameInput.value = "";
+        walletNameInput.value = ""; walletIconValue.value = "bank"; walletColorValue.value = "#DDF5E7";
+        renderWalletAddChoices(); setWalletFormVisible(false);
         showMessage(walletMessage, `Dompet "${name}" berhasil ditambahkan.`);
     } catch (error) {
         console.error("Gagal menambahkan dompet:", error);
-        showMessage(walletMessage, "Dompet gagal ditambahkan. Coba lagi.", true);
-    } finally {
-        submitButton.disabled = false;
-    }
+        showMessage(walletMessage, "Dompet gagal ditambahkan. Pastikan migrasi ikon dan warna sudah dijalankan, lalu coba lagi.", true);
+    } finally { submitButton.disabled = false; }
 });
 
 initializeApp();
