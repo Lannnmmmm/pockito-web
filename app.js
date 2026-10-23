@@ -2220,6 +2220,35 @@ supabase.auth.onAuthStateChange((event) => {
     if (event === "PASSWORD_RECOVERY") showPasswordRecovery();
 });
 
+
+// Apply reviewed receipt OCR results to the regular transaction form.
+document.addEventListener("pockito:receipt-confirmed", (event) => {
+    const receipt = event.detail || {};
+    transactionType.value = "expense";
+    renderCategoryOptions();
+    const preferredCategory = currentCategories.find((item) =>
+        item.type === "expense" && /belanja|kebutuhan|grocer|makan|lainnya/i.test(item.name)
+    ) || currentCategories.find((item) => item.type === "expense");
+    if (preferredCategory) transactionCategory.value = preferredCategory.id;
+    if (receipt.date) document.getElementById("transaction-date").value = receipt.date;
+    if (receipt.total > 0) document.getElementById("transaction-amount").value = String(receipt.total);
+    setTransactionDateTimeToNow();
+    if (receipt.date) document.getElementById("transaction-date").value = receipt.date;
+    const details = (receipt.items || [])
+        .filter((item) => item.name.trim() || item.price > 0)
+        .map((item) => {
+            const name = item.name.trim() || "Barang";
+            return item.price > 0 ? `${name} Rp${Number(item.price).toLocaleString("id-ID")}` : name;
+        });
+    const descriptionParts = [];
+    if (receipt.store && receipt.store.trim()) descriptionParts.push(`Nota: ${receipt.store.trim()}`);
+    if (details.length) descriptionParts.push(details.join("; "));
+    document.getElementById("transaction-description").value = descriptionParts.join(" — ").slice(0, 2000);
+    showMessage(transactionMessage, "Hasil nota sudah dimasukkan. Periksa kategori, dompet, nominal, dan rincian sebelum menyimpan.");
+    transactionForm.scrollIntoView({ behavior: "smooth", block: "start" });
+    document.getElementById("transaction-amount").focus({ preventScroll: true });
+});
+
 transactionForm.addEventListener("submit", async (event) => {
     event.preventDefault();
 
