@@ -9,6 +9,7 @@ const addItemButton = document.getElementById("receipt-add-item");
 const itemsList = document.getElementById("receipt-items-list");
 const useResultButton = document.getElementById("receipt-use-result");
 let ocrModulePromise = null;
+let ocrEnginePromise = null;
 
 function localToday() {
     const now = new Date();
@@ -194,41 +195,39 @@ fileInput.addEventListener("change", async () => {
         if (!ocrModulePromise) ocrModulePromise = import("https://esm.sh/@paddleocr/paddleocr-js@0.4.2?bundle");
         const { PaddleOCR } = await ocrModulePromise;
         setScanStatus("Menyiapkan PaddleOCR PP-OCRv5... model OCR mungkin perlu diunduh saat pertama kali.");
-        const ocr = await PaddleOCR.create({
-            lang: "id",
-            ocrVersion: "PP-OCRv5",
-            ortOptions: {
-                backend: "wasm",
-                wasmPaths: "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/",
-                numThreads: 2,
-                simd: true
-            }
-        });
+        if (!ocrEnginePromise) {
+            ocrEnginePromise = PaddleOCR.create({
+                lang: "id",
+                ocrVersion: "PP-OCRv5",
+                ortOptions: {
+                    backend: "wasm",
+                    wasmPaths: "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/",
+                    numThreads: 2,
+                    simd: true
+                }
+            });
+        }
+        const ocr = await ocrEnginePromise;
         const preparedImage = await prepareReceiptImage(file);
         setScanStatus("Membaca teks nota dengan PaddleOCR...");
-        let result;
-        try {
-            const [ocrResult] = await ocr.predict(preparedImage);
-            result = {
-                data: {
-                    text: (ocrResult?.items || [])
-                        .filter((item) => item && typeof item.text === "string")
-                        .sort((a, b) => {
-                            const ay = a.poly?.reduce((sum, p) => sum + p[1], 0) / (a.poly?.length || 1);
-                            const by = b.poly?.reduce((sum, p) => sum + p[1], 0) / (b.poly?.length || 1);
-                            if (Math.abs(ay - by) > 18) return ay - by;
-                            const ax = a.poly?.reduce((sum, p) => sum + p[0], 0) / (a.poly?.length || 1);
-                            const bx = b.poly?.reduce((sum, p) => sum + p[0], 0) / (b.poly?.length || 1);
-                            return ax - bx;
-                        })
-                        .map((item) => item.text.trim())
-                        .filter(Boolean)
-                        .join("\\n")
-                }
-            };
-        } finally {
-            if (typeof ocr.dispose === "function") ocr.dispose();
-        }
+        const [ocrResult] = await ocr.predict(preparedImage);
+        const result = {
+            data: {
+                text: (ocrResult?.items || [])
+                    .filter((item) => item && typeof item.text === "string")
+                    .sort((a, b) => {
+                        const ay = a.poly?.reduce((sum, p) => sum + p[1], 0) / (a.poly?.length || 1);
+                        const by = b.poly?.reduce((sum, p) => sum + p[1], 0) / (b.poly?.length || 1);
+                        if (Math.abs(ay - by) > 18) return ay - by;
+                        const ax = a.poly?.reduce((sum, p) => sum + p[0], 0) / (a.poly?.length || 1);
+                        const bx = b.poly?.reduce((sum, p) => sum + p[0], 0) / (b.poly?.length || 1);
+                        return ax - bx;
+                    })
+                    .map((item) => item.text.trim())
+                    .filter(Boolean)
+                    .join("\\n")
+            }
+        };
         const receipt = extractReceipt(result.data.text || "");
         showReceiptReview(receipt);
         const itemNote = receipt.items.length ? `${receipt.items.length} baris barang terdeteksi` : "rincian barang belum berhasil dikenali";
