@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pockito — Catatan Keuangan</title>
-    <link rel="stylesheet" href="style.css?v=20261023-32">
+    <link rel="stylesheet" href="style.css?v=20261023-33">
 </head>
 <body>
     <main class="app">
@@ -323,15 +323,39 @@
                     <p class="section-kicker">PENGATURAN PERSONAL</p>
                     <h2>Kelola dompet</h2>
                     <p class="panel-description">Dompet bersifat opsional. Tanpa dompet, kamu tetap bisa mencatat transaksi seperti biasa.</p>
-                    <form id="wallet-form">
-                        <label for="wallet-name">Nama dompet baru</label>
+                    <div class="wallet-add-header">
+                        <div>
+                            <h2>Dompet milikmu</h2>
+                            <p class="panel-description">Setiap dompet punya ikon dan warna identitas sendiri.</p>
+                        </div>
+                        <button type="button" id="wallet-add-toggle" class="wallet-add-toggle"><span aria-hidden="true">＋</span> Tambah dompet</button>
+                    </div>
+                    <form id="wallet-form" class="wallet-add-form" hidden>
+                        <div class="wallet-add-form-heading">
+                            <div>
+                                <h3>Dompet baru</h3>
+                                <p class="panel-description">Pilih nama, ikon, dan warna favoritmu.</p>
+                            </div>
+                            <button type="button" id="wallet-add-close" class="wallet-form-close" aria-label="Tutup formulir">×</button>
+                        </div>
+                        <label for="wallet-name">Nama dompet</label>
                         <input id="wallet-name" type="text" maxlength="60" required placeholder="Contoh: BRI, SeaBank, Tunai">
-                        <button type="submit">+ Tambah dompet</button>
+                        <fieldset class="wallet-choice-field">
+                            <legend>Ikon</legend>
+                            <div id="wallet-add-icon-picker" class="wallet-icon-picker"></div>
+                            <input id="wallet-icon-value" type="hidden" value="bank">
+                        </fieldset>
+                        <fieldset class="wallet-choice-field">
+                            <legend>Warna identitas</legend>
+                            <div id="wallet-add-color-picker" class="wallet-color-picker"></div>
+                            <input id="wallet-color-value" type="hidden" value="#DDF5E7">
+                        </fieldset>
+                        <div class="wallet-add-form-actions">
+                            <button type="button" id="wallet-add-cancel" class="secondary-action">Batal</button>
+                            <button type="submit">Simpan dompet</button>
+                        </div>
                         <p id="wallet-message" role="status"></p>
                     </form>
-                </div>
-                <div class="panel">
-                    <h2>Dompet milikmu</h2>
                     <div id="wallet-list"></div>
                 </div>
             </section>
@@ -366,6 +390,6 @@
         </section>
     </main>
 
-    <script type="module" src="app.js?v=20261023-36"></script>
+    <script type="module" src="app.js?v=20261023-37"></script>
 </body>
 </html>
