@@ -1572,21 +1572,44 @@ function renderCategoryOptions() {
 
 function renderCategoryList() {
     categoryList.replaceChildren();
+    const totalCount = document.getElementById("category-total-count");
+    if (totalCount) {
+        totalCount.textContent = `${currentCategories.length} kategori`;
+    }
 
-    for (const type of ["expense", "income"]) {
+    for (const type of ["income", "expense"]) {
+        const categories = currentCategories.filter((category) => category.type === type);
         const group = document.createElement("section");
-        group.className = "category-group";
+        group.className = `category-group category-group-${type}`;
 
-        const heading = document.createElement("h3");
-        heading.textContent = type === "expense" ? "Pengeluaran" : "Pemasukan";
+        const heading = document.createElement("div");
+        heading.className = "category-group-heading";
+
+        const titleBlock = document.createElement("div");
+        titleBlock.className = "category-group-title";
+
+        const marker = document.createElement("span");
+        marker.className = "category-group-marker";
+        marker.setAttribute("aria-hidden", "true");
+        marker.textContent = type === "income" ? "↗" : "↘";
+
+        const title = document.createElement("h3");
+        title.textContent = type === "income" ? "Pemasukan" : "Pengeluaran";
+        titleBlock.append(marker, title);
+
+        const count = document.createElement("span");
+        count.className = "category-group-count";
+        count.textContent = `${categories.length} kategori`;
+        heading.append(titleBlock, count);
         group.append(heading);
 
-        const categories = currentCategories.filter((category) => category.type === type);
+        const list = document.createElement("div");
+        list.className = "category-group-items";
         if (categories.length === 0) {
             const empty = document.createElement("p");
             empty.className = "empty-note";
             empty.textContent = "Belum ada kategori.";
-            group.append(empty);
+            list.append(empty);
         }
 
         for (const category of categories) {
@@ -1606,9 +1629,10 @@ function renderCategoryList() {
             tag.textContent = isDefault ? "Bawaan Pockito" : "Personal";
 
             item.append(name, tag);
-            group.append(item);
+            list.append(item);
         }
 
+        group.append(list);
         categoryList.append(group);
     }
 }
@@ -2295,6 +2319,25 @@ for (const button of viewButtons) {
     button.addEventListener("click", () => showView(button.dataset.viewTarget));
 }
 
+const categoryFormToggle = document.getElementById("show-category-form");
+const categoryFormClose = document.getElementById("category-form-close");
+const categoryFormCancel = document.getElementById("category-form-cancel");
+
+function setCategoryFormVisible(visible) {
+    categoryForm.hidden = !visible;
+    categoryFormToggle.hidden = visible;
+    if (visible) {
+        customCategoryName.focus();
+    } else {
+        categoryForm.reset();
+        showMessage(categoryMessage, "");
+    }
+}
+
+categoryFormToggle.addEventListener("click", () => setCategoryFormVisible(true));
+categoryFormClose.addEventListener("click", () => setCategoryFormVisible(false));
+categoryFormCancel.addEventListener("click", () => setCategoryFormVisible(false));
+
 categoryForm.addEventListener("submit", async (event) => {
     event.preventDefault();
 
@@ -2337,6 +2380,7 @@ categoryForm.addEventListener("submit", async (event) => {
         await loadCategories();
         customCategoryName.value = "";
         showMessage(categoryMessage, `Kategori "${name}" berhasil ditambahkan.`);
+        setCategoryFormVisible(false);
     } catch (error) {
         console.error("Gagal menambahkan kategori:", error);
         showMessage(categoryMessage, "Kategori gagal ditambahkan. Coba lagi.", true);
