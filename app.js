@@ -1765,10 +1765,50 @@ function renderHistoryTransactions() {
 
     let income = 0;
     let expense = 0;
+    const transactionsByDay = new Map();
+
     for (const transaction of monthTransactions) {
         if (transaction.type === "income") income += Number(transaction.amount);
         else expense += Number(transaction.amount);
-        transactionList.append(createTransactionItem(transaction));
+
+        const dateKey = transaction.transaction_date || "tanggal-tidak-diketahui";
+        if (!transactionsByDay.has(dateKey)) transactionsByDay.set(dateKey, []);
+        transactionsByDay.get(dateKey).push(transaction);
+    }
+
+    for (const [dateKey, dayTransactions] of transactionsByDay) {
+        const dayGroup = document.createElement("section");
+        dayGroup.className = "transaction-day-group";
+
+        const heading = document.createElement("div");
+        heading.className = "transaction-day-heading";
+
+        const dateLabel = document.createElement("strong");
+        if (dateKey !== "tanggal-tidak-diketahui") {
+            const [year, month, day] = dateKey.split("-").map(Number);
+            const localDate = new Date(year, month - 1, day);
+            dateLabel.textContent = new Intl.DateTimeFormat("id-ID", {
+                weekday: "long",
+                day: "numeric",
+                month: "long",
+                year: "numeric"
+            }).format(localDate);
+        } else {
+            dateLabel.textContent = "Tanggal tidak tersedia";
+        }
+
+        const dayCount = document.createElement("span");
+        dayCount.textContent = `${dayTransactions.length} transaksi`;
+        heading.append(dateLabel, dayCount);
+        dayGroup.append(heading);
+
+        const dayItems = document.createElement("div");
+        dayItems.className = "transaction-day-items";
+        for (const transaction of dayTransactions) {
+            dayItems.append(createTransactionItem(transaction));
+        }
+        dayGroup.append(dayItems);
+        transactionList.append(dayGroup);
     }
 
     document.getElementById("history-income").textContent = rupiah.format(income);
