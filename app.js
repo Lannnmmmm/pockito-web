@@ -310,7 +310,10 @@ function renderSavingsTargets() {
                     ? movement.movement_type === "deposit" ? `Dari dompet: ${wallet.name}`
                         : movement.movement_type === "return" ? `Ke dompet: ${wallet.name}` : ""
                     : "";
-                note.textContent = [dateLabel, walletLabel, movement.description].filter(Boolean).join(" · ");
+                const movementNote = movement.movement_type === "spend"
+                    ? movement.description
+                    : walletLabel || movement.description;
+                note.textContent = [dateLabel, movementNote].filter(Boolean).join(" · ");
                 details.append(label, note);
                 const amount = document.createElement("strong");
                 amount.className = "target-history-amount";
@@ -443,7 +446,6 @@ function openTargetMovementModal(target, kind, saved) {
                     </div>
                 </form>
             </section>`;
-        const modal = overlay.querySelector(".target-modal");
         const form = overlay.querySelector("form");
         const walletField = overlay.querySelector(".target-modal-wallet-field");
         const walletSelect = overlay.querySelector("#target-modal-wallet");
@@ -455,6 +457,7 @@ function openTargetMovementModal(target, kind, saved) {
             : isReturn ? "Pilih dompet tujuan untuk mengembalikan dana dari target ini."
             : "Catat dana dari target ini yang benar-benar sudah digunakan.";
         walletField.hidden = !needsWallet;
+        walletSelect.required = needsWallet;
         if (needsWallet) {
             currentWallets.forEach((wallet) => {
                 const option = document.createElement("option");
