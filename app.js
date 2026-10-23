@@ -1542,6 +1542,8 @@ function showView(viewName) {
         button.classList.toggle("active", isActive);
         button.setAttribute("aria-current", isActive ? "page" : "false");
     }
+
+    document.querySelector(".nav-more")?.removeAttribute("open");
 }
 
 function monthKey(date) {
