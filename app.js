@@ -2234,17 +2234,9 @@ document.addEventListener("pockito:receipt-confirmed", (event) => {
     if (receipt.total > 0) document.getElementById("transaction-amount").value = String(receipt.total);
     setTransactionDateTimeToNow();
     if (receipt.date) document.getElementById("transaction-date").value = receipt.date;
-    const details = (receipt.items || [])
-        .filter((item) => item.name.trim() || item.price > 0)
-        .map((item) => {
-            const name = item.name.trim() || "Barang";
-            return item.price > 0 ? `${name} Rp${Number(item.price).toLocaleString("id-ID")}` : name;
-        });
-    const descriptionParts = [];
-    if (receipt.store && receipt.store.trim()) descriptionParts.push(`Nota: ${receipt.store.trim()}`);
-    if (details.length) descriptionParts.push(details.join("; "));
-    document.getElementById("transaction-description").value = descriptionParts.join(" — ").slice(0, 2000);
-    showMessage(transactionMessage, "Hasil nota sudah dimasukkan. Periksa kategori, dompet, nominal, dan rincian sebelum menyimpan.");
+    const description = receipt.store?.trim() ? `Nota: ${receipt.store.trim()}` : "";
+    document.getElementById("transaction-description").value = description.slice(0, 2000);
+    showMessage(transactionMessage, "Hasil nota sudah dimasukkan. Periksa kategori, dompet, keterangan, dan nominal sebelum menyimpan.");
     transactionForm.scrollIntoView({ behavior: "smooth", block: "start" });
     document.getElementById("transaction-amount").focus({ preventScroll: true });
 });
