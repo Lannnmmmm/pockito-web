@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pockito — Catatan Keuangan</title>
-    <link rel="stylesheet" href="style.css?v=20261023-30">
+    <link rel="stylesheet" href="style.css?v=20261023-31">
 </head>
 <body>
     <main class="app">
@@ -88,13 +88,34 @@
 
         <section id="dashboard-section" hidden>
             <nav class="app-nav" aria-label="Menu utama">
-                <button type="button" class="nav-tab active" data-view-target="home" aria-current="page">Beranda</button>
-                <button type="button" class="nav-tab" data-view-target="input" aria-current="false">Input</button>
-                <button type="button" class="nav-tab" data-view-target="history" aria-current="false">Riwayat</button>
-                <button type="button" class="nav-tab" data-view-target="reports" aria-current="false">Laporan</button>
-                <button type="button" class="nav-tab" data-view-target="targets" aria-current="false">Target</button>
-                <button type="button" class="nav-tab" data-view-target="wallets" aria-current="false">Dompet</button>
-                <button type="button" class="nav-tab" data-view-target="categories" aria-current="false">Kategori</button>
+                <button type="button" class="nav-tab active" data-view-target="home" aria-current="page">
+                    <span class="nav-icon" aria-hidden="true">⌂</span><span>Beranda</span>
+                </button>
+                <button type="button" class="nav-tab" data-view-target="input" aria-current="false">
+                    <span class="nav-icon" aria-hidden="true">＋</span><span>Input</span>
+                </button>
+                <button type="button" class="nav-tab" data-view-target="history" aria-current="false">
+                    <span class="nav-icon" aria-hidden="true">↺</span><span>Riwayat</span>
+                </button>
+                <button type="button" class="nav-tab" data-view-target="reports" aria-current="false">
+                    <span class="nav-icon" aria-hidden="true">▥</span><span>Laporan</span>
+                </button>
+                <button type="button" class="nav-tab" data-view-target="categories" aria-current="false">
+                    <span class="nav-icon" aria-hidden="true">◈</span><span>Kategori</span>
+                </button>
+                <details class="nav-more">
+                    <summary class="nav-tab nav-more-trigger" aria-label="Menu lainnya">
+                        <span class="nav-icon" aria-hidden="true">•••</span><span>Lainnya</span>
+                    </summary>
+                    <div class="nav-more-menu" aria-label="Menu tambahan">
+                        <button type="button" data-view-target="targets" aria-current="false">
+                            <span aria-hidden="true">🎯</span><span>Target tabungan</span>
+                        </button>
+                        <button type="button" data-view-target="wallets" aria-current="false">
+                            <span aria-hidden="true">👛</span><span>Kelola dompet</span>
+                        </button>
+                    </div>
+                </details>
             </nav>
 
             <section data-view="home">
@@ -345,6 +366,6 @@
         </section>
     </main>
 
-    <script type="module" src="app.js?v=20261023-35"></script>
+    <script type="module" src="app.js?v=20261023-36"></script>
 </body>
 </html>
