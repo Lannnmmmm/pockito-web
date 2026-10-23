@@ -439,6 +439,11 @@ function openTargetMovementModal(target, kind, saved) {
                     </div>
                     <label for="target-modal-amount">Nominal (Rp)</label>
                     <input id="target-modal-amount" type="number" min="1" step="1" inputmode="numeric" required placeholder="Contoh: 100000">
+                    <div class="target-modal-note-field" hidden>
+                        <label for="target-modal-note">Keterangan pemakaian</label>
+                        <textarea id="target-modal-note" rows="3" maxlength="300" placeholder="Contoh: beli bahan bangunan, bayar katering, atau biaya transportasi"></textarea>
+                        <small class="target-modal-note-hint">Tulis dana ini dipakai untuk apa.</small>
+                    </div>
                     <p class="target-modal-error" role="alert" hidden></p>
                     <div class="target-modal-actions">
                         <button type="button" class="target-modal-cancel secondary-action">Batal</button>
@@ -451,6 +456,8 @@ function openTargetMovementModal(target, kind, saved) {
         const walletSelect = overlay.querySelector("#target-modal-wallet");
         const walletBalance = overlay.querySelector(".target-modal-wallet-balance");
         const amountInput = overlay.querySelector("#target-modal-amount");
+        const noteField = overlay.querySelector(".target-modal-note-field");
+        const noteInput = overlay.querySelector("#target-modal-note");
         const errorMessage = overlay.querySelector(".target-modal-error");
         overlay.querySelector(".target-modal-description").textContent = isDeposit
             ? "Pindahkan uang dari salah satu dompet ke target ini."
@@ -458,6 +465,8 @@ function openTargetMovementModal(target, kind, saved) {
             : "Catat dana dari target ini yang benar-benar sudah digunakan.";
         walletField.hidden = !needsWallet;
         walletSelect.required = needsWallet;
+        noteField.hidden = !isSpend;
+        noteInput.required = isSpend;
         if (needsWallet) {
             currentWallets.forEach((wallet) => {
                 const option = document.createElement("option");
@@ -502,8 +511,15 @@ function openTargetMovementModal(target, kind, saved) {
         form.addEventListener("submit", (event) => {
             event.preventDefault();
             const amount = Number(amountInput.value);
+            const note = noteInput.value.trim();
             const wallet = needsWallet ? currentWallets.find((item) => item.id === walletSelect.value) : null;
             const available = isDeposit && wallet ? walletRecordedBalance(wallet.id) : saved;
+            if (isSpend && !note) {
+                errorMessage.textContent = "Isi keterangan agar nanti kamu ingat dana ini dipakai untuk apa.";
+                errorMessage.hidden = false;
+                noteInput.focus();
+                return;
+            }
             if (!Number.isFinite(amount) || amount <= 0 || !Number.isInteger(amount)) {
                 errorMessage.textContent = "Masukkan nominal rupiah berupa bilangan bulat yang lebih dari nol.";
                 errorMessage.hidden = false;
@@ -516,7 +532,7 @@ function openTargetMovementModal(target, kind, saved) {
                 errorMessage.hidden = false;
                 return;
             }
-            finish({ amount, wallet });
+            finish({ amount, wallet, note });
         });
         document.body.append(overlay);
         document.addEventListener("keydown", onKeyDown);
@@ -533,7 +549,7 @@ async function moveTargetFunds(target, kind) {
     }
     const movement = await openTargetMovementModal(target, kind, saved);
     if (!movement) return;
-    const { amount, wallet } = movement;
+    const { amount, wallet, note = "" } = movement;
 
     let transactionId = null;
     try {
@@ -548,7 +564,7 @@ async function moveTargetFunds(target, kind) {
                     type: "expense",
                     category_id: category.id,
                     amount,
-                    description: `Pemakaian target: ${target.name}`,
+                    description: `Pemakaian target: ${target.name} — ${note}`,
                     transaction_date: localDateTimeValues().date,
                     transaction_time: localDateTimeValues().time
                 }).select("id").single();
@@ -564,7 +580,7 @@ async function moveTargetFunds(target, kind) {
             amount,
             description: kind === "deposit" ? `Transfer dari ${wallet.name}`
                 : kind === "return" ? `Transfer kembali ke ${wallet.name}`
-                : `Pemakaian target: ${target.name}`,
+                : note,
             movement_date: localDateTimeValues().date
         });
         if (error) {
