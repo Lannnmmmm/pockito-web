@@ -1656,3 +1656,13 @@ button:disabled {
     .target-create-form-actions { flex-direction: column-reverse; }
     .target-create-form-actions button { width: 100%; }
 }
+
+
+/* Target deletion action */
+.target-delete-action {
+    color: var(--expense) !important;
+    border-color: color-mix(in srgb, var(--expense) 35%, var(--border)) !important;
+}
+.target-delete-action:hover {
+    background: color-mix(in srgb, var(--expense) 10%, var(--surface)) !important;
+}
