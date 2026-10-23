@@ -160,9 +160,38 @@ function setTransactionDateTimeToNow() {
 setTransactionDateTimeToNow();
 
 const targetCreationPicker = document.getElementById("target-create-icon-picker");
+const targetCreationForm = document.getElementById("target-form");
+const targetCreationToggle = document.getElementById("show-target-form");
+const targetCreationCancel = document.getElementById("cancel-target-create");
+const targetIconPreview = document.getElementById("target-create-icon-preview");
+
 if (targetCreationPicker) {
     renderTargetIconPicker(targetCreationPicker, selectedNewTargetIcon, (emoji) => {
         selectedNewTargetIcon = emoji;
+        if (targetIconPreview) targetIconPreview.textContent = emoji;
+    });
+}
+if (targetCreationToggle && targetCreationForm) {
+    targetCreationToggle.addEventListener("click", () => {
+        const opening = targetCreationForm.hidden;
+        targetCreationForm.hidden = !opening;
+        targetCreationToggle.textContent = opening ? "Tutup formulir" : "+ Target baru";
+        if (opening) document.getElementById("target-name").focus();
+    });
+}
+if (targetCreationCancel && targetCreationForm) {
+    targetCreationCancel.addEventListener("click", () => {
+        targetCreationForm.reset();
+        selectedNewTargetIcon = "🐷";
+        if (targetIconPreview) targetIconPreview.textContent = selectedNewTargetIcon;
+        const iconDetails = document.querySelector(".target-icon-picker-collapsible");
+        if (iconDetails) iconDetails.open = false;
+        if (targetCreationPicker) renderTargetIconPicker(targetCreationPicker, selectedNewTargetIcon, (emoji) => {
+            selectedNewTargetIcon = emoji;
+            if (targetIconPreview) targetIconPreview.textContent = emoji;
+        });
+        targetCreationForm.hidden = true;
+        targetCreationToggle.textContent = "+ Target baru";
     });
 }
 
@@ -1988,8 +2017,18 @@ document.getElementById("target-form").addEventListener("submit", async (event) 
         if (result.error) throw result.error;
         selectedNewTargetIcon = "🐷";
         const creationPicker = document.getElementById("target-create-icon-picker");
-        if (creationPicker) renderTargetIconPicker(creationPicker, selectedNewTargetIcon, (emoji) => { selectedNewTargetIcon = emoji; });
-        document.getElementById("target-form").reset();
+        const iconPreview = document.getElementById("target-create-icon-preview");
+        const createForm = document.getElementById("target-form");
+        const createToggle = document.getElementById("show-target-form");
+        if (iconPreview) iconPreview.textContent = selectedNewTargetIcon;
+        if (creationPicker) renderTargetIconPicker(creationPicker, selectedNewTargetIcon, (emoji) => {
+            selectedNewTargetIcon = emoji;
+            if (iconPreview) iconPreview.textContent = emoji;
+        });
+        document.querySelector(".target-icon-picker-collapsible")?.removeAttribute("open");
+        createForm.reset();
+        createForm.hidden = true;
+        if (createToggle) createToggle.textContent = "+ Target baru";
         await loadSavingsTargets();
         showMessage(document.getElementById("target-message"), `Target "${name}" berhasil dibuat.`);
     } catch (error) {
