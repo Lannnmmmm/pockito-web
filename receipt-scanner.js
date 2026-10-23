@@ -5,8 +5,6 @@ const scanStatus = document.getElementById("receipt-scan-status");
 const reviewPanel = document.getElementById("receipt-review");
 const reviewClose = document.getElementById("receipt-review-close");
 const reviewCancel = document.getElementById("receipt-review-cancel");
-const addItemButton = document.getElementById("receipt-add-item");
-const itemsList = document.getElementById("receipt-items-list");
 const useResultButton = document.getElementById("receipt-use-result");
 let ocrModulePromise = null;
 let ocrEnginePromise = null;
@@ -137,38 +135,10 @@ function extractReceipt(text) {
     // Don't silently fabricate a total from item lines; the receipt may include tax/discounts.
     return { store, date, total, items, rawText: text };
 }
-function addReceiptItem(item = { name: "", price: 0 }) {
-    const row = document.createElement("div");
-    row.className = "receipt-item-row";
-    const name = document.createElement("input");
-    name.type = "text";
-    name.maxLength = 160;
-    name.placeholder = "Nama barang";
-    name.setAttribute("aria-label", "Nama barang");
-    name.value = item.name || "";
-    const price = document.createElement("input");
-    price.type = "number";
-    price.min = "0";
-    price.step = "1";
-    price.placeholder = "Harga (Rp)";
-    price.setAttribute("aria-label", "Harga barang dalam rupiah");
-    price.value = item.price > 0 ? String(item.price) : "";
-    const remove = document.createElement("button");
-    remove.type = "button";
-    remove.className = "receipt-item-remove";
-    remove.textContent = "×";
-    remove.setAttribute("aria-label", "Hapus barang");
-    remove.addEventListener("click", () => row.remove());
-    row.append(name, price, remove);
-    itemsList.append(row);
-}
 function showReceiptReview(receipt) {
     document.getElementById("receipt-store").value = receipt.store || "";
     document.getElementById("receipt-date").value = receipt.date || localToday();
     document.getElementById("receipt-total").value = receipt.total > 0 ? String(receipt.total) : "";
-    itemsList.replaceChildren();
-    (receipt.items || []).forEach(addReceiptItem);
-    if (!receipt.items?.length) addReceiptItem();
     reviewPanel.hidden = false;
     reviewPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
@@ -233,9 +203,11 @@ fileInput.addEventListener("change", async () => {
         };
         const receipt = extractReceipt(result.data.text || "");
         showReceiptReview(receipt);
-        const itemNote = receipt.items.length ? `${receipt.items.length} baris barang terdeteksi` : "rincian barang belum berhasil dikenali";
-        const totalNote = receipt.total ? `total terdeteksi Rp${receipt.total.toLocaleString("id-ID")}` : "total perlu diisi manual";
-        setScanStatus(`OCR selesai: ${itemNote}; ${totalNote}. Periksa hasilnya di bawah.`);
+        const detected = [receipt.store ? "nama toko" : "", receipt.date ? "tanggal" : "", receipt.total ? "total pembayaran" : ""].filter(Boolean);
+        const missing = [!receipt.store ? "nama toko" : "", !receipt.date ? "tanggal" : "", !receipt.total ? "total pembayaran" : ""].filter(Boolean);
+        setScanStatus(detected.length
+            ? `OCR selesai. Terbaca: ${detected.join(", ")}.${missing.length ? ` Periksa/isi manual: ${missing.join(", ")}.` : ""}`
+            : "Foto diproses, tetapi nama toko, tanggal, dan total belum terbaca. Isi ketiganya secara manual.");
     } catch (error) {
         console.error("Receipt OCR failed:", error);
         const reason = error instanceof Error ? error.message : String(error);
@@ -244,7 +216,6 @@ fileInput.addEventListener("change", async () => {
         scanButton.disabled = false;
     }
 });
-addItemButton.addEventListener("click", () => addReceiptItem());
 reviewClose.addEventListener("click", closeReceiptReview);
 reviewCancel.addEventListener("click", closeReceiptReview);
 useResultButton.addEventListener("click", () => {
@@ -255,12 +226,8 @@ useResultButton.addEventListener("click", () => {
         setScanStatus("Isi tanggal dan total pembayaran yang valid sebelum melanjutkan.", true);
         return;
     }
-    const items = [...itemsList.querySelectorAll(".receipt-item-row")].map((row) => ({
-        name: row.querySelector('input[type="text"]').value.trim(),
-        price: Number(row.querySelector('input[type="number"]').value) || 0
-    })).filter((item) => item.name || item.price > 0);
     document.dispatchEvent(new CustomEvent("pockito:receipt-confirmed", {
-        detail: { store, date, total, items }
+        detail: { store, date, total }
     }));
     closeReceiptReview();
     setScanStatus("Hasil scan diterapkan ke formulir transaksi. Periksa lagi sebelum menyimpan.");
