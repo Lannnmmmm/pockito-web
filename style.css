@@ -1277,3 +1277,164 @@ button:disabled {
     font-size: 12px;
 }
 .target-actions .secondary-action:disabled { opacity: 0.45; cursor: not-allowed; }
+
+
+/* Savings target movement history and polished transfer modal */
+.target-history {
+    border: 1px solid var(--border);
+    border-radius: 13px;
+    overflow: hidden;
+}
+.target-history > summary {
+    padding: 11px 13px;
+    color: var(--primary-dark);
+    background: var(--background);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 700;
+    list-style-position: inside;
+}
+.target-history-list {
+    padding: 0 12px;
+}
+.target-history-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+}
+.target-history-row:last-child { border-bottom: none; }
+.target-history-details {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 4px;
+}
+.target-history-details strong {
+    font-size: 13px;
+}
+.target-history-details small {
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+.target-history-amount {
+    flex-shrink: 0;
+    font-size: 13px;
+    white-space: nowrap;
+}
+.target-history-deposit .target-history-amount { color: var(--income); }
+.target-history-return .target-history-amount,
+.target-history-spend .target-history-amount { color: var(--expense); }
+
+.target-modal-overlay {
+    position: fixed;
+    z-index: 1000;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 18px;
+    background: rgb(17 24 19 / 52%);
+    backdrop-filter: blur(4px);
+}
+.target-modal {
+    position: relative;
+    width: min(100%, 440px);
+    max-height: min(90vh, 760px);
+    overflow-y: auto;
+    padding: 25px;
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    box-shadow: 0 24px 80px rgb(0 0 0 / 25%);
+}
+.target-modal-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: grid;
+    width: 36px;
+    min-height: 36px;
+    place-items: center;
+    padding: 0;
+    color: var(--muted);
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    font-size: 23px;
+}
+.target-modal .section-kicker { margin: 0 0 8px; }
+.target-modal h2 { margin: 0 36px 8px 0; }
+.target-modal-description {
+    margin: 0 0 20px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.5;
+}
+.target-modal-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.target-modal-form label {
+    margin-top: 4px;
+    font-size: 13px;
+    font-weight: 700;
+}
+.target-modal-form input,
+.target-modal-form select {
+    width: 100%;
+    min-height: 48px;
+    margin: 0;
+    padding: 12px 13px;
+    color: var(--text);
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+}
+.target-modal-wallet-balance {
+    display: block;
+    margin-top: 7px;
+    color: var(--muted);
+    font-size: 12px;
+}
+.target-modal-error {
+    margin: 0;
+    color: #c0392b;
+    font-size: 13px;
+}
+.target-modal-actions {
+    display: flex;
+    gap: 9px;
+    margin-top: 8px;
+}
+.target-modal-actions button {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+}
+.target-modal-actions .secondary-action {
+    color: var(--text);
+    background: var(--background);
+    border: 1px solid var(--border);
+}
+.target-modal-actions .secondary-action:hover { background: var(--border); }
+:root[data-theme="dark"] .target-history > summary {
+    color: #c5dfca;
+    background: #252c27;
+}
+:root[data-theme="dark"] .target-modal-form input,
+:root[data-theme="dark"] .target-modal-form select {
+    color: var(--text);
+    background: #1b211d;
+    border-color: var(--border);
+}
+@media (max-width: 420px) {
+    .target-modal { padding: 22px 18px; border-radius: 18px; }
+    .target-modal-actions { flex-direction: column-reverse; }
+    .target-modal-actions button { width: 100%; }
+}
