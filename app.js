@@ -1691,7 +1691,7 @@ function createTransactionItem(transaction, compact = false) {
 
     const wallet = currentWallets.find((entry) => entry.id === transaction.wallet_id);
     const walletLabel = document.createElement("small");
-    walletLabel.textContent = wallet ? `Dompet: ${wallet.name}` : "Tanpa dompet";
+    walletLabel.textContent = wallet ? wallet.name : "Tanpa dompet";
 
     const value = document.createElement("div");
     value.className = `transaction-amount ${transaction.type === "income" ? "income" : "expense"}`;
