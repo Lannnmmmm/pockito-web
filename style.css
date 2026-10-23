@@ -3027,3 +3027,68 @@ button:disabled {
         font-size: clamp(13px, 3.5vw, 16px);
     }
 }
+
+
+/* Compact balance summary and understated primary action */
+[data-view="home"] .balance-panel {
+    padding: 19px 21px;
+}
+[data-view="home"] .balance-panel > p:not(.section-kicker) {
+    margin: 2px 0 0;
+    font-size: 12px;
+    line-height: 1.4;
+}
+[data-view="home"] #total-balance {
+    margin: 2px 0 0;
+    font-size: clamp(23px, 4.5vw, 28px);
+    font-weight: 700;
+    letter-spacing: -.45px;
+    line-height: 1.2;
+}
+[data-view="home"] .balance-caption {
+    margin-top: 4px;
+    font-size: 10px;
+    line-height: 1.35;
+}
+[data-view="home"] .balance-panel .secondary-action {
+    display: inline-flex;
+    width: auto;
+    min-height: 34px;
+    align-items: center;
+    justify-content: center;
+    margin-top: 13px;
+    padding: 7px 12px;
+    border: 1px solid #dce7da;
+    border-radius: 10px;
+    color: #506b57;
+    background: #edf3e9;
+    box-shadow: none;
+    font-size: 12px;
+    font-weight: 600;
+}
+[data-view="home"] .balance-panel .secondary-action:hover {
+    color: #355d40;
+    background: #e3ecdf;
+}
+:root[data-theme="dark"] [data-view="home"] .balance-panel .secondary-action {
+    color: #c6e1ca;
+    background: #2c3b30;
+    border-color: #3b4c3e;
+}
+:root[data-theme="dark"] [data-view="home"] .balance-panel .secondary-action:hover {
+    background: #354737;
+}
+@media (max-width: 480px) {
+    [data-view="home"] .balance-panel {
+        padding: 17px 16px;
+    }
+    [data-view="home"] #total-balance {
+        font-size: clamp(22px, 6vw, 26px);
+    }
+    [data-view="home"] .balance-panel .secondary-action {
+        min-height: 32px;
+        margin-top: 11px;
+        padding: 6px 10px;
+        font-size: 11px;
+    }
+}
