@@ -159,6 +159,13 @@ function setTransactionDateTimeToNow() {
 
 setTransactionDateTimeToNow();
 
+const targetCreationPicker = document.getElementById("target-create-icon-picker");
+if (targetCreationPicker) {
+    renderTargetIconPicker(targetCreationPicker, selectedNewTargetIcon, (emoji) => {
+        selectedNewTargetIcon = emoji;
+    });
+}
+
 function showMessage(element, message, isError = false) {
     element.textContent = message;
     element.style.color = isError ? "#c0392b" : "#4e8b68";
