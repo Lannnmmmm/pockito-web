@@ -1687,3 +1687,27 @@ button:disabled {
 .target-bury-modal .target-complete-summary strong {
     color: var(--text);
 }
+
+
+/* Compact savings target summary */
+.target-card-top {
+    align-items: flex-start;
+}
+.target-title-block {
+    padding-top: 2px;
+}
+.target-title-block h3 {
+    line-height: 1.3;
+}
+.target-amount-line {
+    color: var(--muted);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.4;
+}
+.target-progress-track-inline {
+    width: 100%;
+    max-width: 320px;
+    height: 5px;
+    margin-top: 3px;
+}
