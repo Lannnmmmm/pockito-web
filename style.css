@@ -2921,3 +2921,37 @@ button:disabled {
         font-size: 12px;
     }
 }
+
+
+/* History transactions: match the compact two-row layout used on Home */
+[data-view="history"] .transaction-day-items .transaction-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+[data-view="history"] .transaction-day-items .transaction-info {
+    flex: 1;
+    min-width: 0;
+}
+
+[data-view="history"] .transaction-day-items .transaction-info strong {
+    display: block;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+[data-view="history"] .transaction-day-items .transaction-info small {
+    display: inline-block;
+    margin: 4px 8px 0 0;
+    font-size: 11px;
+    line-height: 1.4;
+    vertical-align: top;
+}
+
+[data-view="history"] .transaction-day-items .transaction-amount {
+    align-self: center;
+    max-width: 48%;
+    font-size: 13px;
+    overflow-wrap: anywhere;
+}
