@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pockito — Catatan Keuangan</title>
-    <link rel="stylesheet" href="style.css?v=20261023-35">
+    <link rel="stylesheet" href="style.css?v=20261023-36">
 </head>
 <body>
     <main class="app">
@@ -213,22 +213,24 @@
                     <p class="section-kicker">CATATAN KEUANGAN</p>
                     <h2>Riwayat transaksi</h2>
                     <p class="panel-description">Pilih bulan untuk melihat transaksi pada periode tersebut.</p>
-                    <div class="history-month-navigation">
-                        <button type="button" id="history-prev-month" class="month-nav-button" aria-label="Bulan sebelumnya">‹</button>
-                        <h3 id="history-month-label">Bulan ini</h3>
-                        <button type="button" id="history-next-month" class="month-nav-button" aria-label="Bulan berikutnya">›</button>
-                    </div>
-                    <div class="history-summary">
-                        <div>
-                            <span>Pemasukan</span>
-                            <strong id="history-income">Rp0</strong>
+                    <div class="history-sticky-header">
+                        <div class="history-month-navigation">
+                            <button type="button" id="history-prev-month" class="month-nav-button" aria-label="Bulan sebelumnya">‹</button>
+                            <h3 id="history-month-label">Bulan ini</h3>
+                            <button type="button" id="history-next-month" class="month-nav-button" aria-label="Bulan berikutnya">›</button>
                         </div>
-                        <div>
-                            <span>Pengeluaran</span>
-                            <strong id="history-expense">Rp0</strong>
+                        <div class="history-summary">
+                            <div>
+                                <span>Pemasukan</span>
+                                <strong id="history-income">Rp0</strong>
+                            </div>
+                            <div>
+                                <span>Pengeluaran</span>
+                                <strong id="history-expense">Rp0</strong>
+                            </div>
                         </div>
+                        <p id="history-transaction-count" class="history-count">0 transaksi</p>
                     </div>
-                    <p id="history-transaction-count" class="history-count">0 transaksi</p>
                     <div id="transaction-list"></div>
                 </div>
             </section>
@@ -410,6 +412,6 @@
         </section>
     </main>
 
-    <script type="module" src="app.js?v=20261023-38"></script>
+    <script type="module" src="app.js?v=20261023-39"></script>
 </body>
 </html>
