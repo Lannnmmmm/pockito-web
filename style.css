@@ -1546,3 +1546,44 @@ button:disabled {
 @media (max-width: 390px) {
     .target-complete-summary { grid-template-columns: 1fr; }
 }
+
+
+/* Savings target icon picker and compact edit control */
+.target-card-top { align-items: center; }
+.target-edit-mini {
+    display: grid;
+    flex: 0 0 36px;
+    width: 36px;
+    height: 36px;
+    min-height: 36px;
+    place-items: center;
+    margin-left: auto;
+    padding: 0;
+    color: var(--muted);
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    font-size: 20px;
+    line-height: 1;
+}
+.target-edit-mini:hover { color: var(--primary-dark); border-color: var(--primary); }
+.target-icon-picker-heading { display: block; margin-top: 6px; font-size: 13px; font-weight: 700; }
+.target-icon-picker { display: flex; flex-direction: column; gap: 12px; }
+.target-icon-picker-inline { margin: 2px 0 14px; }
+.target-icon-picker-group { display: flex; flex-direction: column; gap: 7px; }
+.target-icon-picker-label { color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: .03em; }
+.target-icon-picker-grid { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 6px; }
+.target-icon-option {
+    display: grid; min-width: 0; min-height: 39px; place-items: center;
+    margin: 0; padding: 3px; color: var(--text); background: var(--background);
+    border: 1px solid var(--border); border-radius: 10px; font-size: 20px; line-height: 1;
+}
+.target-icon-option.selected {
+    background: color-mix(in srgb, var(--primary) 14%, var(--surface));
+    border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary);
+}
+:root[data-theme="dark"] .target-icon-option.selected { background: #29352c; }
+@media (max-width: 420px) {
+    .target-icon-picker-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+    .target-edit-mini { flex-basis: 34px; width: 34px; height: 34px; min-height: 34px; }
+}
