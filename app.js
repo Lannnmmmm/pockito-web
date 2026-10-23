@@ -373,7 +373,23 @@ function renderSavingsTargets() {
         titleBlock.className = "target-title-block";
         const title = document.createElement("h3");
         title.textContent = target.name;
-        titleBlock.append(title);
+        const amountLine = document.createElement("small");
+        amountLine.className = "target-amount-line";
+        amountLine.textContent = targetAmount === null
+            ? `${rupiah.format(saved)} terkumpul`
+            : `${rupiah.format(saved)} / ${rupiah.format(targetAmount)}`;
+        titleBlock.append(title, amountLine);
+
+        if (progress !== null) {
+            const track = document.createElement("div");
+            track.className = "target-progress-track target-progress-track-inline";
+            const bar = document.createElement("div");
+            bar.className = "target-progress-bar";
+            bar.style.width = `${progress}%`;
+            track.append(bar);
+            titleBlock.append(track);
+        }
+
         top.append(icon, titleBlock);
         if (!target.deleted_at) {
             const editMini = document.createElement("button");
@@ -387,44 +403,7 @@ function renderSavingsTargets() {
         }
         card.append(top);
 
-        if (progress !== null) {
-            const track = document.createElement("div");
-            track.className = "target-progress-track";
-            const bar = document.createElement("div");
-            bar.className = "target-progress-bar";
-            bar.style.width = `${progress}%`;
-            track.append(bar);
-            const percent = document.createElement("small");
-            percent.className = "target-progress-label";
-            percent.textContent = `${Math.round(progress)}% terkumpul`;
-            card.append(track, percent);
-        }
-
         const targetMoves = cachedTargetMovements.filter((item) => item.target_id === target.id);
-        const deposited = targetMoves.filter((item) => item.movement_type === "deposit")
-            .reduce((sum, item) => sum + Number(item.amount), 0);
-        const spent = targetMoves.filter((item) => item.movement_type === "spend")
-            .reduce((sum, item) => sum + Number(item.amount), 0);
-
-        const stats = document.createElement("div");
-        stats.className = "target-stats-grid";
-        const statItems = [
-            { label: "Dana dipindah", value: rupiah.format(deposited), className: "target-stat-deposited" },
-            { label: "Total target", value: targetAmount === null ? "Belum diatur" : rupiah.format(targetAmount), className: "target-stat-goal" },
-            { label: "Dana dipakai", value: rupiah.format(spent), className: "target-stat-spent" },
-            { label: "Dana saat ini", value: rupiah.format(saved), className: "target-stat-current" }
-        ];
-        statItems.forEach((item) => {
-            const stat = document.createElement("div");
-            stat.className = `target-stat ${item.className}`;
-            const label = document.createElement("small");
-            label.textContent = item.label;
-            const value = document.createElement("strong");
-            value.textContent = item.value;
-            stat.append(label, value);
-            stats.append(stat);
-        });
-        card.append(stats);
 
         if (targetMoves.length > 0) {
             const history = document.createElement("details");
