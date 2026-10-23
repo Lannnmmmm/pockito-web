@@ -303,7 +303,6 @@ async function loadSavingsTargets() {
         .from("savings_targets")
         .select("id, name, target_amount, icon, status, created_at, completed_at, deleted_at")
         .eq("user_id", currentUser.id)
-        .is("deleted_at", null)
         .order("created_at", { ascending: false });
     if (targetError && isMissingTargetDeletedAtColumn(targetError)) {
         const legacy = await supabase.from("savings_targets")
@@ -326,7 +325,6 @@ async function loadSavingsTargets() {
         const fallback = await supabase.from("savings_targets")
             .select("id, name, target_amount, status, created_at, completed_at, deleted_at")
             .eq("user_id", currentUser.id)
-            .is("deleted_at", null)
             .order("created_at", { ascending: false });
         if (fallback.error) throw fallback.error;
         loadedTargets = (fallback.data || []).map((target) => ({ ...target, icon: "🐷" }));
@@ -354,16 +352,18 @@ async function loadSavingsTargets() {
 function renderSavingsTargets() {
     const activeList = document.getElementById("active-target-list");
     const completedList = document.getElementById("completed-target-list");
-    if (!activeList || !completedList) return;
+    const buriedList = document.getElementById("buried-target-list");
+    if (!activeList || !completedList || !buriedList) return;
     activeList.replaceChildren();
     completedList.replaceChildren();
+    buriedList.replaceChildren();
 
     for (const target of cachedSavingsTargets) {
         const saved = targetSavedBalance(target.id);
         const targetAmount = target.target_amount === null ? null : Number(target.target_amount);
         const progress = targetAmount ? Math.min(100, Math.max(0, saved / targetAmount * 100)) : null;
         const card = document.createElement("article");
-        card.className = "target-card";
+        card.className = target.deleted_at ? "target-card target-buried-card" : "target-card";
         const top = document.createElement("div");
         top.className = "target-card-top";
         const icon = document.createElement("span");
@@ -375,14 +375,16 @@ function renderSavingsTargets() {
         title.textContent = target.name;
         titleBlock.append(title);
         top.append(icon, titleBlock);
-        const editMini = document.createElement("button");
-        editMini.type = "button";
-        editMini.className = "target-edit-mini";
-        editMini.textContent = "✎";
-        editMini.setAttribute("aria-label", `Edit target ${target.name}`);
-        editMini.title = "Edit target";
-        editMini.addEventListener("click", () => editSavingsTarget(target));
-        top.append(editMini);
+        if (!target.deleted_at) {
+            const editMini = document.createElement("button");
+            editMini.type = "button";
+            editMini.className = "target-edit-mini";
+            editMini.textContent = "✎";
+            editMini.setAttribute("aria-label", `Edit target ${target.name}`);
+            editMini.title = "Edit target";
+            editMini.addEventListener("click", () => editSavingsTarget(target));
+            top.append(editMini);
+        }
         card.append(top);
 
         if (progress !== null) {
@@ -466,6 +468,15 @@ function renderSavingsTargets() {
             card.append(history);
         }
 
+        if (target.deleted_at) {
+            const buriedLabel = document.createElement("small");
+            buriedLabel.className = "target-buried-label";
+            buriedLabel.textContent = `Dikubur pada ${new Date(target.deleted_at).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}`;
+            card.append(buriedLabel);
+            buriedList.append(card);
+            continue;
+        }
+
         if (target.status === "active") {
             const actions = document.createElement("div");
             actions.className = "target-actions";
@@ -525,17 +536,23 @@ function renderSavingsTargets() {
         }
     }
 
-    if (!cachedSavingsTargets.some((item) => item.status === "active")) {
+    if (!cachedSavingsTargets.some((item) => item.status === "active" && !item.deleted_at)) {
         const empty = document.createElement("p");
         empty.className = "empty-note";
         empty.textContent = "Belum ada target aktif. Buat target pertamamu di atas!";
         activeList.append(empty);
     }
-    if (!cachedSavingsTargets.some((item) => item.status === "completed")) {
+    if (!cachedSavingsTargets.some((item) => item.status === "completed" && !item.deleted_at)) {
         const empty = document.createElement("p");
         empty.className = "empty-note";
         empty.textContent = "Belum ada target yang diselesaikan.";
         completedList.append(empty);
+    }
+    if (!cachedSavingsTargets.some((item) => item.deleted_at)) {
+        const empty = document.createElement("p");
+        empty.className = "empty-note";
+        empty.textContent = "Belum ada mimpi yang dikubur. Semoga targetmu banyak yang jadi kenyataan! 🌱";
+        buriedList.append(empty);
     }
 }
 
@@ -647,25 +664,152 @@ async function reopenSavingsTarget(target) {
     }
 }
 
+function openBuryTargetModal(target, refundable, spent) {
+    return new Promise((resolve) => {
+        const overlay = document.createElement("div");
+        overlay.className = "target-modal-overlay";
+        overlay.innerHTML = `
+            <section class="target-modal target-bury-modal" role="dialog" aria-modal="true" aria-labelledby="bury-target-title">
+                <button type="button" class="target-modal-close" aria-label="Tutup">×</button>
+                <p class="section-kicker">MIMPI YANG TERKUBUR</p>
+                <h2 id="bury-target-title">Kubur target ini?</h2>
+                <p class="target-modal-description"></p>
+                <div class="target-complete-summary">
+                    <div><span>Dana dikembalikan ke dompet</span><strong data-refund></strong></div>
+                    <div><span>Pengeluaran yang tetap tercatat</span><strong data-spent></strong></div>
+                </div>
+                <p class="target-complete-extra">Riwayat target akan tetap bisa dilihat, tetapi tidak bisa diedit atau digunakan lagi. Pengeluaran yang sudah dicatat tidak dihapus.</p>
+                <form class="target-modal-form">
+                    <div class="target-modal-wallet-field">
+                        <label for="bury-target-wallet">Kembalikan sisa dana ke dompet</label>
+                        <select id="bury-target-wallet"></select>
+                        <small class="target-modal-wallet-balance"></small>
+                    </div>
+                    <p class="target-modal-error" role="alert" hidden></p>
+                    <div class="target-modal-actions">
+                        <button type="button" class="target-modal-cancel secondary-action">Batal</button>
+                        <button type="submit" class="target-modal-submit">Kubur target</button>
+                    </div>
+                </form>
+            </section>`;
+        const form = overlay.querySelector("form");
+        const walletField = overlay.querySelector(".target-modal-wallet-field");
+        const walletSelect = overlay.querySelector("#bury-target-wallet");
+        const walletBalance = overlay.querySelector(".target-modal-wallet-balance");
+        const errorMessage = overlay.querySelector(".target-modal-error");
+        overlay.querySelector("#bury-target-title").textContent = `Kubur "${target.name}"?`;
+        overlay.querySelector(".target-modal-description").textContent =
+            "Sebelum disimpan ke arsip, sisa dana akan dikembalikan ke dompet pilihanmu.";
+        overlay.querySelector("[data-refund]").textContent = rupiah.format(refundable);
+        overlay.querySelector("[data-spent]").textContent = rupiah.format(spent);
+        walletField.hidden = refundable <= 0;
+        walletSelect.required = refundable > 0;
+        if (refundable > 0) {
+            currentWallets.forEach((wallet) => {
+                const option = document.createElement("option");
+                option.value = wallet.id;
+                option.textContent = `${wallet.name} · saldo ${rupiah.format(walletRecordedBalance(wallet.id))}`;
+                walletSelect.append(option);
+            });
+            if (currentWallets.length === 0) {
+                const option = document.createElement("option");
+                option.value = "";
+                option.textContent = "Belum ada dompet";
+                walletSelect.append(option);
+                walletBalance.textContent = "Buat dompet terlebih dahulu untuk menerima sisa dana.";
+            } else {
+                walletBalance.textContent = "Seluruh sisa dana akan masuk ke dompet yang dipilih.";
+            }
+        }
+
+        let settled = false;
+        const finish = (result) => {
+            if (settled) return;
+            settled = true;
+            document.removeEventListener("keydown", onKeyDown);
+            overlay.remove();
+            resolve(result);
+        };
+        const onKeyDown = (event) => {
+            if (event.key === "Escape") finish(null);
+        };
+        overlay.addEventListener("click", (event) => {
+            if (event.target === overlay) finish(null);
+        });
+        overlay.querySelector(".target-modal-close").addEventListener("click", () => finish(null));
+        overlay.querySelector(".target-modal-cancel").addEventListener("click", () => finish(null));
+        form.addEventListener("submit", (event) => {
+            event.preventDefault();
+            if (refundable > 0 && (!currentWallets.length || !currentWallets.some((wallet) => wallet.id === walletSelect.value))) {
+                errorMessage.textContent = "Pilih atau buat dompet untuk menerima sisa dana sebelum mengubur target.";
+                errorMessage.hidden = false;
+                return;
+            }
+            finish({ wallet: refundable > 0 ? currentWallets.find((wallet) => wallet.id === walletSelect.value) : null });
+        });
+        document.addEventListener("keydown", onKeyDown);
+        document.body.append(overlay);
+    });
+}
+
 async function deleteSavingsTarget(target) {
-    const movementCount = cachedTargetMovements.filter((item) => item.target_id === target.id).length;
-    const detail = movementCount
-        ? `\n\nRiwayat ${movementCount} pergerakan dana akan disimpan sebagai catatan internal agar perhitungan saldo dompet tetap akurat, tetapi target ini akan disembunyikan dari daftar.`
-        : "\n\nTarget akan disembunyikan dari daftar.";
-    const transactionNote = "\nTransaksi pengeluaran yang sudah masuk ke riwayat transaksi tidak akan dihapus.";
-    if (!window.confirm(`Hapus target "${target.name}"? Tindakan ini menyembunyikannya dari daftar target dan tidak bisa dibatalkan lewat aplikasi.${detail}${transactionNote}`)) return;
+    const saved = targetSavedBalance(target.id);
+    const refundable = Math.max(0, saved);
+    const targetMoves = cachedTargetMovements.filter((item) => item.target_id === target.id);
+    const spent = targetMoves.filter((item) => item.movement_type === "spend")
+        .reduce((sum, item) => sum + Number(item.amount), 0);
+    const result = await openBuryTargetModal(target, refundable, spent);
+    if (!result) return;
+
+    let refundMovementId = null;
     try {
-        const { error } = await supabase.from("savings_targets")
+        if (refundable > 0) {
+            const { data: refundMovement, error: refundError } = await supabase
+                .from("savings_target_movements")
+                .insert({
+                    user_id: currentUser.id,
+                    target_id: target.id,
+                    wallet_id: result.wallet.id,
+                    movement_type: "return",
+                    amount: refundable,
+                    description: `Sisa dana dikembalikan ke ${result.wallet.name} saat target dikubur`,
+                    movement_date: localDateTimeValues().date
+                })
+                .select("id")
+                .single();
+            if (refundError) throw refundError;
+            refundMovementId = refundMovement.id;
+        }
+
+        const { data: updatedTargets, error: buryError } = await supabase
+            .from("savings_targets")
             .update({ deleted_at: new Date().toISOString() })
-            .eq("id", target.id).eq("user_id", currentUser.id).is("deleted_at", null);
-        if (error) throw error;
+            .eq("id", target.id)
+            .eq("user_id", currentUser.id)
+            .is("deleted_at", null)
+            .select("id");
+        if (buryError) throw buryError;
+        if (!updatedTargets || updatedTargets.length === 0) {
+            throw new Error("Target tidak ditemukan atau sudah dikubur.");
+        }
+
         await loadSavingsTargets();
         await loadTransactions();
         await loadWallets();
-        showMessage(document.getElementById("target-message"), "Target dihapus dari daftar. Catatan keuangan tetap dipertahankan.");
+        showMessage(
+            document.getElementById("target-message"),
+            refundable > 0
+                ? `Target masuk ke Mimpi yang Terkubur. ${rupiah.format(refundable)} dikembalikan ke ${result.wallet.name}; pengeluaran ${rupiah.format(spent)} tetap tercatat.`
+                : `Target masuk ke Mimpi yang Terkubur. Tidak ada sisa dana untuk dikembalikan; pengeluaran ${rupiah.format(spent)} tetap tercatat.`
+        );
     } catch (error) {
-        console.error("Gagal menghapus target:", error);
-        showMessage(document.getElementById("target-message"), "Target gagal dihapus. Jalankan migrasi target terbaru di Supabase, lalu coba lagi.", true);
+        console.error("Gagal mengubur target:", error);
+        if (refundMovementId) {
+            const { error: rollbackError } = await supabase.from("savings_target_movements")
+                .delete().eq("id", refundMovementId).eq("user_id", currentUser.id);
+            if (rollbackError) console.error("Gagal membatalkan catatan pengembalian:", rollbackError);
+        }
+        showMessage(document.getElementById("target-message"), "Target belum berhasil dikubur. Periksa koneksi dan pastikan migrasi deleted_at sudah dijalankan di Supabase.", true);
     }
 }
 
