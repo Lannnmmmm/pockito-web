@@ -1699,7 +1699,7 @@ function createTransactionItem(transaction, compact = false) {
     value.textContent = `${sign}${rupiah.format(Number(transaction.amount))}`;
 
     if (compact) {
-        info.append(description, categoryLabel, date);
+        info.append(description, walletLabel, categoryLabel, date);
     } else {
         info.append(description, categoryLabel, date, walletLabel);
     }
