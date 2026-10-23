@@ -422,6 +422,7 @@ function openTargetMovementModal(target, kind, saved) {
     return new Promise((resolve) => {
         const isDeposit = kind === "deposit";
         const isReturn = kind === "return";
+        const isSpend = kind === "spend";
         const needsWallet = isDeposit || isReturn;
         const overlay = document.createElement("div");
         overlay.className = "target-modal-overlay";
