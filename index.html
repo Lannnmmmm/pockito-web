@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pockito — Catatan Keuangan</title>
-    <link rel="stylesheet" href="style.css?v=20261023-25">
+    <link rel="stylesheet" href="style.css?v=20261023-26">
 </head>
 <body>
     <main class="app">
@@ -256,17 +256,27 @@
 
             <section data-view="targets" hidden>
                 <div class="panel">
-                    <p class="section-kicker">RENCANA MASA DEPAN</p>
-                    <h2>Target tabungan</h2>
+                    <div class="target-section-heading">
+                        <div>
+                            <p class="section-kicker">RENCANA MASA DEPAN</p>
+                            <h2>Target tabungan</h2>
+                        </div>
+                        <button type="button" id="show-target-form" class="target-create-toggle">+ Target baru</button>
+                    </div>
                     <p class="panel-description">Pisahkan uang untuk tujuan tertentu tanpa menghitung transfer sebagai pemasukan atau pengeluaran.</p>
-                    <form id="target-form">
+                    <form id="target-form" hidden>
                         <label for="target-name">Nama target</label>
                         <input id="target-name" type="text" maxlength="80" required placeholder="Contoh: Mahar, Liburan, Dana darurat">
                         <label for="target-amount">Nominal target (opsional)</label>
                         <input id="target-amount" type="number" min="1" step="1" placeholder="Contoh: 15000000">
-                        <span class="target-icon-picker-heading">Pilih ikon target</span>
-                        <div id="target-create-icon-picker" class="target-icon-picker target-icon-picker-inline"></div>
-                        <button type="submit">+ Buat target</button>
+                        <details class="target-icon-picker-collapsible">
+                            <summary>Ikon target: <strong id="target-create-icon-preview">🐷</strong> <span>· Ubah ikon</span></summary>
+                            <div id="target-create-icon-picker" class="target-icon-picker target-icon-picker-inline"></div>
+                        </details>
+                        <div class="target-create-form-actions">
+                            <button type="button" id="cancel-target-create" class="secondary-action">Batal</button>
+                            <button type="submit">+ Buat target</button>
+                        </div>
                         <p id="target-message" role="status" aria-live="polite"></p>
                     </form>
                 </div>
@@ -329,6 +339,6 @@
         </section>
     </main>
 
-    <script type="module" src="app.js?v=20261023-30"></script>
+    <script type="module" src="app.js?v=20261023-31"></script>
 </body>
 </html>
