@@ -762,6 +762,7 @@ async function deleteSavingsTarget(target) {
     if (!result) return;
 
     let refundMovementId = null;
+    let targetBuried = false;
     try {
         if (refundable > 0) {
             const { data: refundMovement, error: refundError } = await supabase
@@ -792,6 +793,7 @@ async function deleteSavingsTarget(target) {
         if (!updatedTargets || updatedTargets.length === 0) {
             throw new Error("Target tidak ditemukan atau sudah dikubur.");
         }
+        targetBuried = true;
 
         await loadSavingsTargets();
         await loadTransactions();
@@ -804,7 +806,7 @@ async function deleteSavingsTarget(target) {
         );
     } catch (error) {
         console.error("Gagal mengubur target:", error);
-        if (refundMovementId) {
+        if (refundMovementId && !targetBuried) {
             const { error: rollbackError } = await supabase.from("savings_target_movements")
                 .delete().eq("id", refundMovementId).eq("user_id", currentUser.id);
             if (rollbackError) console.error("Gagal membatalkan catatan pengembalian:", rollbackError);
