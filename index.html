@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pockito — Catatan Keuangan</title>
-    <link rel="stylesheet" href="style.css?v=20261023-39">
+    <link rel="stylesheet" href="style.css?v=20261023-40">
 </head>
 <body>
     <main class="app">
@@ -103,12 +103,19 @@
                 <button type="button" class="nav-tab" data-view-target="targets" aria-current="false" aria-label="Target" title="Target">
                     <span class="nav-icon" aria-hidden="true">◎</span><span>Target</span>
                 </button>
-                <button type="button" class="nav-tab" data-view-target="categories" aria-current="false" aria-label="Kelola kategori" title="Kelola kategori">
-                    <span class="nav-icon" aria-hidden="true">◈</span><span>Kategori</span>
-                </button>
-                <button type="button" class="nav-tab" data-view-target="wallets" aria-current="false" aria-label="Kelola dompet" title="Kelola dompet">
-                    <span class="nav-icon" aria-hidden="true">▱</span><span>Dompet</span>
-                </button>
+                <details class="nav-more">
+                    <summary class="nav-tab nav-more-trigger" aria-label="Menu lainnya" title="Menu lainnya">
+                        <span class="nav-icon" aria-hidden="true">•••</span><span>Lainnya</span>
+                    </summary>
+                    <div class="nav-more-menu" aria-label="Menu tambahan">
+                        <button type="button" data-view-target="categories" aria-current="false">
+                            <span aria-hidden="true">◈</span><span>Kelola kategori</span>
+                        </button>
+                        <button type="button" data-view-target="wallets" aria-current="false">
+                            <span aria-hidden="true">▱</span><span>Kelola dompet</span>
+                        </button>
+                    </div>
+                </details>
             </nav>
 
             <section data-view="home">
