@@ -170,7 +170,7 @@
                             <span class="receipt-scan-icon" aria-hidden="true">▤</span>
                             <div>
                                 <strong>Scan nota belanja</strong>
-                                <p>Foto nota untuk membaca toko, tanggal, total, dan rincian barang.</p>
+                                <p>Foto nota untuk membaca nama toko, tanggal, dan total pembayaran.</p>
                             </div>
                         </div>
                         <input id="receipt-file-input" type="file" accept="image/*" capture="environment" hidden>
@@ -199,11 +199,6 @@
                                     <input id="receipt-total" type="number" min="1" step="1" required>
                                 </div>
                             </div>
-                            <div class="receipt-items-heading">
-                                <h4>Rincian barang</h4>
-                                <button type="button" id="receipt-add-item" class="text-action">＋ Tambah barang</button>
-                            </div>
-                            <div id="receipt-items-list" class="receipt-items-list"></div>
                             <div class="receipt-review-actions">
                                 <button type="button" id="receipt-review-cancel" class="secondary-action">Batal</button>
                                 <button type="button" id="receipt-use-result">Gunakan hasil scan</button>
@@ -456,7 +451,7 @@
         </section>
     </main>
 
-    <script type="module" src="receipt-scanner.js?v=20261023-4"></script>
-    <script type="module" src="app.js?v=20261023-44"></script>
+    <script type="module" src="receipt-scanner.js?v=20261023-5"></script>
+    <script type="module" src="app.js?v=20261023-45"></script>
 </body>
 </html>
