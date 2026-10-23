@@ -2462,3 +2462,82 @@ button:disabled {
         font-size: 11px;
     }
 }
+
+
+/* Keep the history summary below the sticky main navigation */
+.history-sticky-header {
+    top: 100px;
+    z-index: 4;
+    padding: 10px 12px 12px;
+    border: 1px solid var(--border);
+    border-top: 0;
+    border-radius: 0 0 18px 18px;
+}
+.history-sticky-header .history-month-navigation {
+    margin-top: 0;
+}
+
+/* Make each date separator clearly distinct from the transaction rows */
+.transaction-day-group {
+    overflow: hidden;
+    margin: 0 0 18px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--surface);
+}
+.transaction-day-heading {
+    min-height: 44px;
+    margin: 0;
+    padding: 10px 13px;
+    border: 0;
+    border-left: 4px solid #8db99a;
+    background: #edf6ee;
+}
+.transaction-day-heading strong {
+    color: #355f41;
+    font-size: 13px;
+}
+.transaction-day-heading span {
+    padding: 4px 8px;
+    border-radius: 999px;
+    color: #466c50;
+    background: #dcecdf;
+    font-size: 10px;
+    font-weight: 700;
+}
+.transaction-day-items {
+    padding: 0 13px;
+}
+.transaction-day-items .transaction-item {
+    padding-block: 12px;
+}
+:root[data-theme="dark"] .transaction-day-group {
+    background: var(--surface);
+    border-color: var(--border);
+}
+:root[data-theme="dark"] .transaction-day-heading {
+    background: #29392e;
+    border-left-color: #78b58a;
+}
+:root[data-theme="dark"] .transaction-day-heading strong {
+    color: #c8e5ce;
+}
+:root[data-theme="dark"] .transaction-day-heading span {
+    color: #c8e5ce;
+    background: #354d3b;
+}
+@media (max-width: 480px) {
+    .history-sticky-header {
+        top: 132px;
+        padding: 9px 9px 11px;
+    }
+    .transaction-day-heading {
+        padding: 9px 10px;
+    }
+    .transaction-day-heading strong {
+        font-size: 12px;
+    }
+    .transaction-day-items {
+        padding-inline: 10px;
+    }
+}
