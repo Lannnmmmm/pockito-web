@@ -586,53 +586,144 @@ async function moveTargetFunds(target, kind) {
     }
 }
 
+function openCompleteTargetModal(target, alreadySpent, saved) {
+    return new Promise((resolve) => {
+        const overlay = document.createElement("div");
+        overlay.className = "target-modal-overlay";
+        overlay.innerHTML = `
+            <section class="target-modal target-complete-modal" role="dialog" aria-modal="true" aria-labelledby="complete-target-title">
+                <button type="button" class="target-modal-close" aria-label="Tutup">×</button>
+                <p class="section-kicker">TARGET TABUNGAN</p>
+                <h2 id="complete-target-title">Selesaikan target</h2>
+                <p class="target-modal-description"></p>
+                <div class="target-complete-summary">
+                    <div><span>Dana terkumpul</span><strong data-saved></strong></div>
+                    <div><span>Sudah dicatat sebagai pemakaian</span><strong data-spent></strong></div>
+                </div>
+                <form class="target-modal-form">
+                    <label for="complete-target-cost">Total biaya aktual (Rp)</label>
+                    <input id="complete-target-cost" type="number" min="0" step="1" inputmode="numeric" required>
+                    <p class="target-complete-extra" hidden></p>
+                    <div class="target-complete-wallet-field" hidden>
+                        <label for="complete-target-wallet">Dompet untuk membayar kekurangan</label>
+                        <select id="complete-target-wallet"></select>
+                        <small class="target-modal-wallet-balance"></small>
+                    </div>
+                    <div class="target-complete-leftover"><span>Sisa dana setelah selesai</span><strong data-leftover></strong></div>
+                    <p class="target-modal-error" role="alert" hidden></p>
+                    <div class="target-modal-actions">
+                        <button type="button" class="target-modal-cancel secondary-action">Batal</button>
+                        <button type="submit" class="target-modal-submit">Selesaikan target</button>
+                    </div>
+                </form>
+            </section>`;
+        const form = overlay.querySelector("form");
+        const costInput = overlay.querySelector("#complete-target-cost");
+        const walletField = overlay.querySelector(".target-complete-wallet-field");
+        const walletSelect = overlay.querySelector("#complete-target-wallet");
+        const walletBalance = overlay.querySelector(".target-modal-wallet-balance");
+        const extraLabel = overlay.querySelector(".target-complete-extra");
+        const leftoverLabel = overlay.querySelector("[data-leftover]");
+        const errorMessage = overlay.querySelector(".target-modal-error");
+        overlay.querySelector(".target-modal-description").textContent =
+            `Konfirmasi biaya akhir untuk “${target.name}”. Sisa dana yang tidak terpakai akan tetap tercatat di target.`;
+        overlay.querySelector("[data-saved]").textContent = rupiah.format(saved);
+        overlay.querySelector("[data-spent]").textContent = rupiah.format(alreadySpent);
+        costInput.value = String(alreadySpent);
+
+        currentWallets.forEach((wallet) => {
+            const option = document.createElement("option");
+            option.value = wallet.id;
+            option.textContent = `${wallet.name} · ${rupiah.format(walletRecordedBalance(wallet.id))}`;
+            walletSelect.append(option);
+        });
+
+        const calculate = () => {
+            const actualCost = Number(costInput.value);
+            const additionalCost = actualCost - alreadySpent;
+            const fromTarget = Math.min(Math.max(0, additionalCost), saved);
+            const fromWallet = Math.max(0, additionalCost - fromTarget);
+            const leftover = Math.max(0, saved - fromTarget);
+            extraLabel.hidden = fromWallet <= 0;
+            extraLabel.textContent = fromWallet > 0
+                ? `Kekurangan dana target: ${rupiah.format(fromWallet)}. Pilih dompet untuk membayar selisihnya.`
+                : "";
+            walletField.hidden = fromWallet <= 0;
+            walletSelect.required = fromWallet > 0;
+            leftoverLabel.textContent = rupiah.format(leftover);
+            const wallet = currentWallets.find((item) => item.id === walletSelect.value);
+            walletBalance.textContent = wallet
+                ? `Saldo tersedia: ${rupiah.format(walletRecordedBalance(wallet.id))}`
+                : "Belum ada dompet yang tersedia.";
+            return { actualCost, fromWallet, wallet };
+        };
+        costInput.addEventListener("input", () => {
+            errorMessage.hidden = true;
+            calculate();
+        });
+        walletSelect.addEventListener("change", calculate);
+
+        let settled = false;
+        const finish = (result) => {
+            if (settled) return;
+            settled = true;
+            document.removeEventListener("keydown", onKeyDown);
+            overlay.remove();
+            resolve(result);
+        };
+        const onKeyDown = (event) => {
+            if (event.key === "Escape") finish(null);
+        };
+        overlay.addEventListener("click", (event) => {
+            if (event.target === overlay) finish(null);
+        });
+        overlay.querySelector(".target-modal-close").addEventListener("click", () => finish(null));
+        overlay.querySelector(".target-modal-cancel").addEventListener("click", () => finish(null));
+        form.addEventListener("submit", (event) => {
+            event.preventDefault();
+            const result = calculate();
+            if (!Number.isFinite(result.actualCost) || result.actualCost < 0 || !Number.isInteger(result.actualCost)) {
+                errorMessage.textContent = "Masukkan total biaya berupa bilangan bulat nol atau lebih.";
+                errorMessage.hidden = false;
+                return;
+            }
+            if (result.actualCost < alreadySpent) {
+                errorMessage.textContent = `Biaya aktual tidak boleh kurang dari pemakaian yang sudah dicatat (${rupiah.format(alreadySpent)}).`;
+                errorMessage.hidden = false;
+                return;
+            }
+            if (result.fromWallet > 0 && !result.wallet) {
+                errorMessage.textContent = "Tambahkan dompet terlebih dahulu untuk membayar kekurangan dana.";
+                errorMessage.hidden = false;
+                return;
+            }
+            if (result.fromWallet > 0 && result.fromWallet > walletRecordedBalance(result.wallet.id)) {
+                errorMessage.textContent = "Saldo dompet tidak cukup untuk membayar selisih biaya aktual.";
+                errorMessage.hidden = false;
+                return;
+            }
+            finish({ actualCost: result.actualCost, wallet: result.fromWallet > 0 ? result.wallet : null });
+        });
+        document.body.append(overlay);
+        document.addEventListener("keydown", onKeyDown);
+        calculate();
+        costInput.focus();
+        costInput.select();
+    });
+}
+
 async function completeSavingsTarget(target) {
     const targetMoves = cachedTargetMovements.filter((item) => item.target_id === target.id);
     const alreadySpent = targetMoves.filter((item) => item.movement_type === "spend")
         .reduce((sum, item) => sum + Number(item.amount), 0);
     const saved = targetSavedBalance(target.id);
-    const costInput = window.prompt(
-        `Berapa total biaya aktual untuk "${target.name}"? Biaya yang sudah dicatat: ${rupiah.format(alreadySpent)}. Sisa dana yang belum digunakan boleh tetap tersimpan di target.`,
-        String(alreadySpent)
-    );
-    if (costInput === null) return;
-    const actualCost = Number(costInput);
-    if (!Number.isFinite(actualCost) || actualCost < 0) {
-        showMessage(document.getElementById("target-message"), "Biaya aktual harus nol atau lebih.", true);
-        return;
-    }
-    if (actualCost < alreadySpent) {
-        showMessage(document.getElementById("target-message"), "Biaya aktual tidak boleh lebih kecil dari pemakaian yang sudah dicatat. Periksa kembali nominalnya.", true);
-        return;
-    }
+    const completion = await openCompleteTargetModal(target, alreadySpent, saved);
+    if (!completion) return;
+    const { actualCost, wallet } = completion;
 
     const additionalCost = actualCost - alreadySpent;
     const fromTarget = Math.min(additionalCost, saved);
     const fromWallet = additionalCost - fromTarget;
-    let wallet = null;
-    if (fromWallet > 0) {
-        if (currentWallets.length === 0) {
-            showMessage(document.getElementById("target-message"), "Biaya melebihi dana target. Buat dompet terlebih dahulu untuk mencatat selisihnya.", true);
-            return;
-        }
-        const choices = currentWallets.map((item, index) =>
-            `${index + 1}. ${item.name} — ${rupiah.format(walletRecordedBalance(item.id))}`
-        ).join("\n");
-        const selected = window.prompt(`Biaya aktual melebihi dana target sebesar ${rupiah.format(fromWallet)}. Pilih dompet untuk membayar selisih:\n${choices}`, "1");
-        if (selected === null) return;
-        const index = Number(selected) - 1;
-        if (!Number.isInteger(index) || index < 0 || index >= currentWallets.length) {
-            showMessage(document.getElementById("target-message"), "Pilihan dompet tidak valid.", true);
-            return;
-        }
-        wallet = currentWallets[index];
-        if (fromWallet > walletRecordedBalance(wallet.id)) {
-            showMessage(document.getElementById("target-message"), "Saldo dompet tidak cukup untuk membayar selisih biaya aktual.", true);
-            return;
-        }
-    }
-
-    if (!window.confirm(`Selesaikan "${target.name}" dengan biaya aktual ${rupiah.format(actualCost)}? Sisa dana ${rupiah.format(Math.max(0, saved - fromTarget))} akan tetap tercatat di target.`)) return;
 
     const expenseCategory = currentCategories.find((item) => item.type === "expense" && item.name.toLocaleLowerCase("id-ID") === "lainnya")
         || currentCategories.find((item) => item.type === "expense");
