@@ -2955,3 +2955,75 @@ button:disabled {
     font-size: 13px;
     overflow-wrap: anywhere;
 }
+
+
+/* Home dashboard: calmer, more balanced sizing */
+[data-view="home"] .panel {
+    padding: 20px;
+    border-radius: 19px;
+}
+[data-view="home"] .balance-panel {
+    padding: 23px;
+}
+[data-view="home"] #total-balance {
+    font-size: clamp(27px, 5vw, 33px);
+    font-weight: 750;
+    letter-spacing: -.7px;
+    line-height: 1.25;
+}
+[data-view="home"] .balance-panel > p:not(.section-kicker) {
+    font-size: 13px;
+}
+[data-view="home"] .balance-caption {
+    font-size: 11px;
+}
+[data-view="home"] .balance-panel .secondary-action {
+    min-height: 42px;
+    margin-top: 16px;
+    padding: 10px 15px;
+}
+[data-view="home"] .monthly-heading h2,
+[data-view="home"] .recent-heading h2 {
+    font-size: 18px;
+}
+[data-view="home"] .monthly-panel .summary {
+    gap: 10px;
+    margin-top: 14px;
+}
+[data-view="home"] .monthly-panel .summary > div {
+    padding: 12px;
+    border-radius: 13px;
+}
+[data-view="home"] .monthly-panel .summary p {
+    font-size: 12px;
+}
+[data-view="home"] .monthly-panel .summary strong {
+    font-size: clamp(14px, 3vw, 18px);
+    letter-spacing: -.2px;
+}
+[data-view="home"] .monthly-count {
+    padding: 5px 8px;
+    font-size: 11px;
+}
+@media (max-width: 480px) {
+    [data-view="home"] .panel {
+        padding: 16px;
+        border-radius: 16px;
+    }
+    [data-view="home"] .balance-panel {
+        padding: 20px 17px;
+    }
+    [data-view="home"] #total-balance {
+        font-size: clamp(26px, 7vw, 31px);
+    }
+    [data-view="home"] .monthly-heading h2,
+    [data-view="home"] .recent-heading h2 {
+        font-size: 17px;
+    }
+    [data-view="home"] .monthly-panel .summary > div {
+        padding: 11px 9px;
+    }
+    [data-view="home"] .monthly-panel .summary strong {
+        font-size: clamp(13px, 3.5vw, 16px);
+    }
+}
