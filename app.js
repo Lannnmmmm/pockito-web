@@ -87,6 +87,53 @@ let currentWallets = [];
 let currentCategories = [];
 let cachedSavingsTargets = [];
 let cachedTargetMovements = [];
+let selectedNewTargetIcon = "🐷";
+
+const SAVINGS_TARGET_ICONS = [
+    { group: "Perjalanan", icons: ["🌊", "🏖️", "🏝️", "⛰️", "🏕️", "✈️", "🧳", "🚗"] },
+    { group: "Rumah & keluarga", icons: ["🏡", "🏠", "💍", "❤️", "👶", "🐾", "🌷", "🫶"] },
+    { group: "Keuangan", icons: ["🐷", "💰", "👛", "💎", "🪙", "📈", "🏦", "🛟"] },
+    { group: "Hobi & lainnya", icons: ["📷", "💻", "🎧", "🎸", "🎮", "🎁", "⭐", "🎯"] }
+];
+
+function renderTargetIconPicker(container, selectedIcon, onSelect) {
+    container.replaceChildren();
+    SAVINGS_TARGET_ICONS.forEach((group) => {
+        const section = document.createElement("div");
+        section.className = "target-icon-picker-group";
+        const label = document.createElement("span");
+        label.className = "target-icon-picker-label";
+        label.textContent = group.group;
+        const grid = document.createElement("div");
+        grid.className = "target-icon-picker-grid";
+        group.icons.forEach((emoji) => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "target-icon-option";
+            button.textContent = emoji;
+            button.setAttribute("aria-label", emoji);
+            button.setAttribute("aria-pressed", String(emoji === selectedIcon));
+            button.classList.toggle("selected", emoji === selectedIcon);
+            button.addEventListener("click", () => {
+                onSelect(emoji);
+                container.querySelectorAll(".target-icon-option").forEach((option) => {
+                    const isSelected = option.textContent === emoji;
+                    option.classList.toggle("selected", isSelected);
+                    option.setAttribute("aria-pressed", String(isSelected));
+                });
+            });
+            grid.append(button);
+        });
+        section.append(label, grid);
+        container.append(section);
+    });
+}
+
+function isMissingTargetIconColumn(error) {
+    const message = String(error?.message || "").toLowerCase();
+    return message.includes("icon") &&
+        (message.includes("column") || message.includes("schema cache") || message.includes("does not exist"));
+}
 let reportMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 
 function localDateTimeValues() {
@@ -209,12 +256,24 @@ function walletRecordedBalance(walletId) {
 }
 
 async function loadSavingsTargets() {
+    let loadedTargets = [];
     const { data: targets, error: targetError } = await supabase
         .from("savings_targets")
-        .select("id, name, target_amount, status, created_at, completed_at")
+        .select("id, name, target_amount, icon, status, created_at, completed_at")
         .eq("user_id", currentUser.id)
         .order("created_at", { ascending: false });
-    if (targetError) throw targetError;
+    if (targetError && isMissingTargetIconColumn(targetError)) {
+        const fallback = await supabase.from("savings_targets")
+            .select("id, name, target_amount, status, created_at, completed_at")
+            .eq("user_id", currentUser.id)
+            .order("created_at", { ascending: false });
+        if (fallback.error) throw fallback.error;
+        loadedTargets = (fallback.data || []).map((target) => ({ ...target, icon: "🐷" }));
+    } else if (targetError) {
+        throw targetError;
+    } else {
+        loadedTargets = targets || [];
+    }
 
     const { data: movements, error: movementError } = await supabase
         .from("savings_target_movements")
@@ -224,7 +283,7 @@ async function loadSavingsTargets() {
         .order("created_at", { ascending: true });
     if (movementError) throw movementError;
 
-    cachedSavingsTargets = targets || [];
+    cachedSavingsTargets = loadedTargets;
     cachedTargetMovements = movements || [];
     renderSavingsTargets();
     renderWalletList();
@@ -248,13 +307,23 @@ function renderSavingsTargets() {
         top.className = "target-card-top";
         const icon = document.createElement("span");
         icon.className = "target-icon";
-        icon.textContent = "🐷";
+        icon.textContent = target.icon || "🐷";
         const titleBlock = document.createElement("div");
         titleBlock.className = "target-title-block";
         const title = document.createElement("h3");
         title.textContent = target.name;
         titleBlock.append(title);
         top.append(icon, titleBlock);
+        if (target.status === "active") {
+            const editMini = document.createElement("button");
+            editMini.type = "button";
+            editMini.className = "target-edit-mini";
+            editMini.textContent = "✎";
+            editMini.setAttribute("aria-label", `Edit target ${target.name}`);
+            editMini.title = "Edit target";
+            editMini.addEventListener("click", () => editSavingsTarget(target));
+            top.append(editMini);
+        }
         card.append(top);
 
         if (progress !== null) {
@@ -358,17 +427,12 @@ function renderSavingsTargets() {
             spend.textContent = "Catat pemakaian";
             spend.disabled = saved <= 0;
             spend.addEventListener("click", () => moveTargetFunds(target, "spend"));
-            const edit = document.createElement("button");
-            edit.type = "button";
-            edit.className = "secondary-action";
-            edit.textContent = "Edit";
-            edit.addEventListener("click", () => editSavingsTarget(target));
             const complete = document.createElement("button");
             complete.type = "button";
             complete.className = "secondary-action";
             complete.textContent = "Tandai selesai";
             complete.addEventListener("click", () => completeSavingsTarget(target));
-            actions.append(deposit, returnFunds, spend, edit, complete);
+            actions.append(deposit, returnFunds, spend, complete);
             card.append(actions);
             activeList.append(card);
         } else {
@@ -404,31 +468,83 @@ async function refreshTargetData() {
 }
 
 async function editSavingsTarget(target) {
-    const nameValue = window.prompt("Nama target:", target.name);
-    if (nameValue === null) return;
-    const name = nameValue.trim();
-    if (!name) {
-        showMessage(document.getElementById("target-message"), "Nama target tidak boleh kosong.", true);
-        return;
-    }
-    const amountValue = window.prompt("Nominal target (kosongkan jika tidak ditentukan):", target.target_amount ?? "");
-    if (amountValue === null) return;
-    const targetAmount = amountValue.trim() === "" ? null : Number(amountValue);
-    if (targetAmount !== null && (!Number.isFinite(targetAmount) || targetAmount <= 0)) {
-        showMessage(document.getElementById("target-message"), "Nominal target harus lebih dari nol atau dikosongkan.", true);
-        return;
-    }
-    try {
-        const { error } = await supabase.from("savings_targets")
-            .update({ name, target_amount: targetAmount })
-            .eq("id", target.id).eq("user_id", currentUser.id).eq("status", "active");
-        if (error) throw error;
-        await loadSavingsTargets();
-        showMessage(document.getElementById("target-message"), "Target berhasil diperbarui.");
-    } catch (error) {
-        console.error("Gagal mengedit target:", error);
-        showMessage(document.getElementById("target-message"), "Target gagal diperbarui.", true);
-    }
+    const overlay = document.createElement("div");
+    overlay.className = "target-modal-overlay";
+    overlay.innerHTML = `
+        <section class="target-modal" role="dialog" aria-modal="true" aria-labelledby="edit-target-title">
+            <button type="button" class="target-modal-close" aria-label="Tutup">×</button>
+            <p class="section-kicker">PERSONALISASI TARGET</p>
+            <h2 id="edit-target-title">Edit target</h2>
+            <p class="target-modal-description">Atur nama, nominal, dan ikon yang paling mewakili tujuanmu.</p>
+            <form class="target-modal-form">
+                <label for="edit-target-name">Nama target</label>
+                <input id="edit-target-name" type="text" maxlength="80" required>
+                <label for="edit-target-amount">Nominal target (opsional)</label>
+                <input id="edit-target-amount" type="number" min="1" step="1" inputmode="numeric" placeholder="Kosongkan jika belum ditentukan">
+                <span class="target-icon-picker-heading">Pilih ikon</span>
+                <div class="target-icon-picker"></div>
+                <p class="target-modal-error" role="alert" hidden></p>
+                <div class="target-modal-actions">
+                    <button type="button" class="target-modal-cancel secondary-action">Batal</button>
+                    <button type="submit" class="target-modal-submit">Simpan perubahan</button>
+                </div>
+            </form>
+        </section>`;
+    const form = overlay.querySelector("form");
+    const nameInput = overlay.querySelector("#edit-target-name");
+    const amountInput = overlay.querySelector("#edit-target-amount");
+    const picker = overlay.querySelector(".target-icon-picker");
+    const errorMessage = overlay.querySelector(".target-modal-error");
+    let selectedIcon = target.icon || "🐷";
+    nameInput.value = target.name;
+    amountInput.value = target.target_amount ?? "";
+    renderTargetIconPicker(picker, selectedIcon, (emoji) => { selectedIcon = emoji; });
+
+    const close = () => {
+        overlay.remove();
+        document.removeEventListener("keydown", onKeyDown);
+    };
+    const onKeyDown = (event) => { if (event.key === "Escape") close(); };
+    overlay.querySelector(".target-modal-close").addEventListener("click", close);
+    overlay.querySelector(".target-modal-cancel").addEventListener("click", close);
+    overlay.addEventListener("click", (event) => { if (event.target === overlay) close(); });
+    document.addEventListener("keydown", onKeyDown);
+    document.body.append(overlay);
+    nameInput.focus();
+
+    form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const name = nameInput.value.trim();
+        const amountText = amountInput.value.trim();
+        const targetAmount = amountText === "" ? null : Number(amountText);
+        if (!name || (targetAmount !== null && (!Number.isFinite(targetAmount) || targetAmount <= 0))) {
+            errorMessage.textContent = "Periksa nama dan nominal target.";
+            errorMessage.hidden = false;
+            return;
+        }
+        const submit = form.querySelector('[type="submit"]');
+        submit.disabled = true;
+        errorMessage.hidden = true;
+        try {
+            let result = await supabase.from("savings_targets")
+                .update({ name, target_amount: targetAmount, icon: selectedIcon })
+                .eq("id", target.id).eq("user_id", currentUser.id).eq("status", "active");
+            if (result.error && isMissingTargetIconColumn(result.error)) {
+                result = await supabase.from("savings_targets")
+                    .update({ name, target_amount: targetAmount })
+                    .eq("id", target.id).eq("user_id", currentUser.id).eq("status", "active");
+            }
+            if (result.error) throw result.error;
+            close();
+            await loadSavingsTargets();
+            showMessage(document.getElementById("target-message"), "Target berhasil diperbarui.");
+        } catch (error) {
+            console.error("Gagal mengedit target:", error);
+            errorMessage.textContent = "Target gagal diperbarui. Coba lagi.";
+            errorMessage.hidden = false;
+            submit.disabled = false;
+        }
+    });
 }
 
 function openTargetMovementModal(target, kind, saved) {
@@ -1854,10 +1970,18 @@ document.getElementById("target-form").addEventListener("submit", async (event) 
         return;
     }
     try {
-        const { error } = await supabase.from("savings_targets").insert({
-            user_id: currentUser.id, name, target_amount: targetAmount
+        let result = await supabase.from("savings_targets").insert({
+            user_id: currentUser.id, name, target_amount: targetAmount, icon: selectedNewTargetIcon
         });
-        if (error) throw error;
+        if (result.error && isMissingTargetIconColumn(result.error)) {
+            result = await supabase.from("savings_targets").insert({
+                user_id: currentUser.id, name, target_amount: targetAmount
+            });
+        }
+        if (result.error) throw result.error;
+        selectedNewTargetIcon = "🐷";
+        const creationPicker = document.getElementById("target-create-icon-picker");
+        if (creationPicker) renderTargetIconPicker(creationPicker, selectedNewTargetIcon, (emoji) => { selectedNewTargetIcon = emoji; });
         document.getElementById("target-form").reset();
         await loadSavingsTargets();
         showMessage(document.getElementById("target-message"), `Target "${name}" berhasil dibuat.`);
