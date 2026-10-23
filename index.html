@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pockito — Catatan Keuangan</title>
-    <link rel="stylesheet" href="style.css?v=20261023-34">
+    <link rel="stylesheet" href="style.css?v=20261023-35">
 </head>
 <body>
     <main class="app">
@@ -362,11 +362,25 @@
 
             <section data-view="categories" hidden>
                 <div class="panel">
-                    <p class="section-kicker">PENGATURAN PERSONAL</p>
-                    <h2>Kelola kategori</h2>
-                    <p class="panel-description">Kategori di sini hanya tersimpan untuk akunmu.</p>
-                    <form id="category-form">
-                        <label for="custom-category-name">Nama kategori baru</label>
+                    <div class="category-page-heading">
+                        <div>
+                            <p class="section-kicker">PENGATURAN PERSONAL</p>
+                            <h2>Kelola kategori</h2>
+                        </div>
+                        <button type="button" id="show-category-form" class="category-create-toggle">
+                            <span aria-hidden="true">＋</span> Tambah kategori
+                        </button>
+                    </div>
+                    <p class="panel-description">Atur kategori pemasukan dan pengeluaran sesuai kebutuhanmu.</p>
+                    <form id="category-form" class="category-add-form" hidden>
+                        <div class="category-add-form-heading">
+                            <div>
+                                <h3>Kategori baru</h3>
+                                <p class="panel-description">Pilih nama dan jenis transaksinya.</p>
+                            </div>
+                            <button type="button" id="category-form-close" class="category-form-close" aria-label="Tutup form">×</button>
+                        </div>
+                        <label for="custom-category-name">Nama kategori</label>
                         <input id="custom-category-name" type="text" maxlength="50"
                                required placeholder="Contoh: Nabung Nikah">
 
@@ -376,12 +390,18 @@
                             <option value="income">Pemasukan</option>
                         </select>
 
-                        <button type="submit">+ Tambah kategori</button>
+                        <div class="category-add-form-actions">
+                            <button type="button" id="category-form-cancel" class="secondary-action">Batal</button>
+                            <button type="submit">Simpan kategori</button>
+                        </div>
                         <p id="category-message" role="status"></p>
                     </form>
                 </div>
-                <div class="panel">
-                    <h2>Kategori milikmu</h2>
+                <div class="panel category-list-panel">
+                    <div class="category-list-heading">
+                        <h2>Kategori milikmu</h2>
+                        <span id="category-total-count" class="category-total-count">0 kategori</span>
+                    </div>
                     <div id="category-list"></div>
                 </div>
             </section>
@@ -390,6 +410,6 @@
         </section>
     </main>
 
-    <script type="module" src="app.js?v=20261023-37"></script>
+    <script type="module" src="app.js?v=20261023-38"></script>
 </body>
 </html>
