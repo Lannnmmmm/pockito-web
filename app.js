@@ -1698,11 +1698,7 @@ function createTransactionItem(transaction, compact = false) {
     const sign = transaction.type === "income" ? "+" : "−";
     value.textContent = `${sign}${rupiah.format(Number(transaction.amount))}`;
 
-    if (compact) {
-        info.append(description, walletLabel, categoryLabel, date);
-    } else {
-        info.append(description, categoryLabel, date, walletLabel);
-    }
+    info.append(description, walletLabel, categoryLabel, date);
     item.append(info, value);
     return item;
 }
