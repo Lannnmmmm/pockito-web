@@ -2380,3 +2380,85 @@ button:disabled {
     .category-total-count,
     .category-group-count { padding: 4px 7px; font-size: 10px; }
 }
+
+
+/* Sticky month overview and daily separators in transaction history */
+.history-sticky-header {
+    position: sticky;
+    top: 8px;
+    z-index: 15;
+    margin: 0 0 18px;
+    padding: 1px 0 10px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    border-radius: 0 0 16px 16px;
+    box-shadow: 0 8px 16px -15px rgb(20 30 20 / 45%);
+}
+.history-sticky-header .history-month-navigation {
+    margin-top: 10px;
+}
+.history-sticky-header .history-summary {
+    margin-bottom: 8px;
+}
+.history-sticky-header .history-count {
+    margin: 0;
+    padding: 0 2px;
+}
+.transaction-day-group {
+    margin: 0 0 15px;
+}
+.transaction-day-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin: 0 0 5px;
+    padding: 9px 2px 8px;
+    border-bottom: 1px solid var(--border);
+}
+.transaction-day-heading strong {
+    min-width: 0;
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 750;
+    text-transform: capitalize;
+}
+.transaction-day-heading span {
+    flex: 0 0 auto;
+    color: var(--muted);
+    font-size: 11px;
+    white-space: nowrap;
+}
+.transaction-day-items .transaction-item {
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
+}
+.transaction-day-items .transaction-item:last-child {
+    border-bottom: 0;
+}
+:root[data-theme="dark"] .history-sticky-header {
+    box-shadow: 0 8px 18px -15px rgb(0 0 0 / 80%);
+}
+@media (max-width: 480px) {
+    .history-sticky-header {
+        top: 4px;
+        margin-inline: -2px;
+        padding-inline: 2px;
+    }
+    .history-sticky-header .history-month-navigation {
+        gap: 7px;
+        grid-template-columns: 40px minmax(0, 1fr) 40px;
+    }
+    .history-sticky-header .history-summary {
+        gap: 7px;
+    }
+    .history-sticky-header .history-summary > div {
+        padding: 10px;
+    }
+    .transaction-day-heading {
+        padding-top: 8px;
+        padding-bottom: 7px;
+    }
+    .transaction-day-heading strong {
+        font-size: 11px;
+    }
+}
