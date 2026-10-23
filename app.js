@@ -2221,26 +2221,6 @@ supabase.auth.onAuthStateChange((event) => {
 });
 
 
-// Apply reviewed receipt OCR results to the regular transaction form.
-document.addEventListener("pockito:receipt-confirmed", (event) => {
-    const receipt = event.detail || {};
-    transactionType.value = "expense";
-    renderCategoryOptions();
-    const preferredCategory = currentCategories.find((item) =>
-        item.type === "expense" && /belanja|kebutuhan|grocer|makan|lainnya/i.test(item.name)
-    ) || currentCategories.find((item) => item.type === "expense");
-    if (preferredCategory) transactionCategory.value = preferredCategory.id;
-    if (receipt.date) document.getElementById("transaction-date").value = receipt.date;
-    if (receipt.total > 0) document.getElementById("transaction-amount").value = String(receipt.total);
-    setTransactionDateTimeToNow();
-    if (receipt.date) document.getElementById("transaction-date").value = receipt.date;
-    const description = receipt.store?.trim() ? `Nota: ${receipt.store.trim()}` : "";
-    document.getElementById("transaction-description").value = description.slice(0, 2000);
-    showMessage(transactionMessage, "Hasil nota sudah dimasukkan. Periksa kategori, dompet, keterangan, dan nominal sebelum menyimpan.");
-    transactionForm.scrollIntoView({ behavior: "smooth", block: "start" });
-    document.getElementById("transaction-amount").focus({ preventScroll: true });
-});
-
 transactionForm.addEventListener("submit", async (event) => {
     event.preventDefault();
 
