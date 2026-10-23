@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pockito — Catatan Keuangan</title>
-    <link rel="stylesheet" href="style.css?v=20261023-45">
+    <link rel="stylesheet" href="style.css?v=20261023-46">
 </head>
 <body>
     <main class="app">
@@ -165,6 +165,51 @@
                     <p class="section-kicker">CATAT KEUANGAN</p>
                     <h2>Input transaksi</h2>
                     <p class="panel-description">Catat pemasukan atau pengeluaranmu di sini.</p>
+                    <div class="receipt-scan-card">
+                        <div class="receipt-scan-copy">
+                            <span class="receipt-scan-icon" aria-hidden="true">▤</span>
+                            <div>
+                                <strong>Scan nota belanja</strong>
+                                <p>Foto nota untuk membaca toko, tanggal, total, dan rincian barang.</p>
+                            </div>
+                        </div>
+                        <input id="receipt-file-input" type="file" accept="image/*" capture="environment" hidden>
+                        <button type="button" id="receipt-scan-button" class="receipt-scan-button">📷 Scan nota</button>
+                        <p id="receipt-scan-status" class="receipt-scan-status" role="status" aria-live="polite"></p>
+                        <section id="receipt-review" class="receipt-review" hidden>
+                            <div class="receipt-review-heading">
+                                <div>
+                                    <p class="section-kicker">HASIL OCR</p>
+                                    <h3>Periksa hasil scan</h3>
+                                </div>
+                                <button type="button" id="receipt-review-close" class="receipt-review-close" aria-label="Tutup hasil scan">×</button>
+                            </div>
+                            <p class="panel-description">OCR bisa keliru membaca angka. Koreksi semua data sebelum menggunakannya.</p>
+                            <div class="form-grid receipt-review-fields">
+                                <div class="form-field">
+                                    <label for="receipt-store">Nama toko</label>
+                                    <input id="receipt-store" type="text" maxlength="120" placeholder="Nama toko">
+                                </div>
+                                <div class="form-field">
+                                    <label for="receipt-date">Tanggal nota</label>
+                                    <input id="receipt-date" type="date" required>
+                                </div>
+                                <div class="form-field">
+                                    <label for="receipt-total">Total pembayaran (Rp)</label>
+                                    <input id="receipt-total" type="number" min="1" step="1" required>
+                                </div>
+                            </div>
+                            <div class="receipt-items-heading">
+                                <h4>Rincian barang</h4>
+                                <button type="button" id="receipt-add-item" class="text-action">＋ Tambah barang</button>
+                            </div>
+                            <div id="receipt-items-list" class="receipt-items-list"></div>
+                            <div class="receipt-review-actions">
+                                <button type="button" id="receipt-review-cancel" class="secondary-action">Batal</button>
+                                <button type="button" id="receipt-use-result">Gunakan hasil scan</button>
+                            </div>
+                        </section>
+                    </div>
                     <form id="transaction-form">
                         <div class="form-grid">
                             <div class="form-field">
@@ -198,7 +243,7 @@
                             </div>
                             <div class="form-field">
                                 <label for="transaction-description">Keterangan</label>
-                                <input id="transaction-description" type="text" maxlength="200" placeholder="Contoh: Makan siang">
+                                <input id="transaction-description" type="text" maxlength="2000" placeholder="Contoh: Makan siang atau rincian nota">
                             </div>
                         </div>
                         <button type="submit">Simpan transaksi</button>
@@ -411,6 +456,6 @@
         </section>
     </main>
 
-    <script type="module" src="app.js?v=20261023-43"></script>
+    <script type="module" src="app.js?v=20261023-44"></script>
 </body>
 </html>
