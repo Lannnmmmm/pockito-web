@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pockito — Catatan Keuangan</title>
-    <link rel="stylesheet" href="style.css?v=20261023-24">
+    <link rel="stylesheet" href="style.css?v=20261023-25">
 </head>
 <body>
     <main class="app">
@@ -264,6 +264,8 @@
                         <input id="target-name" type="text" maxlength="80" required placeholder="Contoh: Mahar, Liburan, Dana darurat">
                         <label for="target-amount">Nominal target (opsional)</label>
                         <input id="target-amount" type="number" min="1" step="1" placeholder="Contoh: 15000000">
+                        <span class="target-icon-picker-heading">Pilih ikon target</span>
+                        <div id="target-create-icon-picker" class="target-icon-picker target-icon-picker-inline"></div>
                         <button type="submit">+ Buat target</button>
                         <p id="target-message" role="status" aria-live="polite"></p>
                     </form>
@@ -327,6 +329,6 @@
         </section>
     </main>
 
-    <script type="module" src="app.js?v=20261023-28"></script>
+    <script type="module" src="app.js?v=20261023-29"></script>
 </body>
 </html>
