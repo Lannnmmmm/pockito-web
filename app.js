@@ -381,13 +381,20 @@ function renderSavingsTargets() {
         titleBlock.append(title, amountLine);
 
         if (progress !== null) {
+            const progressMeta = document.createElement("div");
+            progressMeta.className = "target-progress-meta";
+            const percentLabel = document.createElement("small");
+            percentLabel.className = "target-progress-label";
+            percentLabel.textContent = `${Math.round(progress)}% terkumpul`;
+            progressMeta.append(percentLabel);
+
             const track = document.createElement("div");
             track.className = "target-progress-track target-progress-track-inline";
             const bar = document.createElement("div");
             bar.className = "target-progress-bar";
             bar.style.width = `${progress}%`;
             track.append(bar);
-            titleBlock.append(track);
+            titleBlock.append(progressMeta, track);
         }
 
         top.append(icon, titleBlock);
@@ -404,6 +411,24 @@ function renderSavingsTargets() {
         card.append(top);
 
         const targetMoves = cachedTargetMovements.filter((item) => item.target_id === target.id);
+        const spent = targetMoves.filter((item) => item.movement_type === "spend")
+            .reduce((sum, item) => sum + Number(item.amount), 0);
+        const stats = document.createElement("div");
+        stats.className = "target-stats-grid target-stats-compact";
+        [
+            { label: "Dana saat ini", value: rupiah.format(saved), className: "target-stat-current" },
+            { label: "Dana terpakai", value: rupiah.format(spent), className: "target-stat-spent" }
+        ].forEach((item) => {
+            const stat = document.createElement("div");
+            stat.className = `target-stat ${item.className}`;
+            const label = document.createElement("small");
+            label.textContent = item.label;
+            const value = document.createElement("strong");
+            value.textContent = item.value;
+            stat.append(label, value);
+            stats.append(stat);
+        });
+        card.append(stats);
 
         if (targetMoves.length > 0) {
             const history = document.createElement("details");
@@ -461,32 +486,53 @@ function renderSavingsTargets() {
             actions.className = "target-actions";
             const deposit = document.createElement("button");
             deposit.type = "button";
-            deposit.className = "secondary-action";
-            deposit.textContent = "+ Tambah dana";
+            deposit.className = "target-primary-action";
+            deposit.textContent = "＋ Tambah dana";
             deposit.addEventListener("click", () => moveTargetFunds(target, "deposit"));
+
+            const more = document.createElement("details");
+            more.className = "target-more-actions";
+            const moreSummary = document.createElement("summary");
+            moreSummary.textContent = "Lainnya";
+            const moreMenu = document.createElement("div");
+            moreMenu.className = "target-more-menu";
             const returnFunds = document.createElement("button");
             returnFunds.type = "button";
             returnFunds.className = "secondary-action";
-            returnFunds.textContent = "Kembalikan";
+            returnFunds.textContent = "↩ Kembalikan dana";
             returnFunds.disabled = saved <= 0;
-            returnFunds.addEventListener("click", () => moveTargetFunds(target, "return"));
+            returnFunds.addEventListener("click", () => {
+                more.open = false;
+                moveTargetFunds(target, "return");
+            });
             const spend = document.createElement("button");
             spend.type = "button";
             spend.className = "secondary-action";
-            spend.textContent = "Catat pemakaian";
+            spend.textContent = "− Catat pemakaian";
             spend.disabled = saved <= 0;
-            spend.addEventListener("click", () => moveTargetFunds(target, "spend"));
+            spend.addEventListener("click", () => {
+                more.open = false;
+                moveTargetFunds(target, "spend");
+            });
             const complete = document.createElement("button");
             complete.type = "button";
             complete.className = "secondary-action";
-            complete.textContent = "Tandai selesai";
-            complete.addEventListener("click", () => completeSavingsTarget(target));
+            complete.textContent = "✓ Tandai selesai";
+            complete.addEventListener("click", () => {
+                more.open = false;
+                completeSavingsTarget(target);
+            });
             const deleteButton = document.createElement("button");
             deleteButton.type = "button";
             deleteButton.className = "secondary-action target-delete-action";
             deleteButton.textContent = "Hapus target";
-            deleteButton.addEventListener("click", () => deleteSavingsTarget(target));
-            actions.append(deposit, returnFunds, spend, complete, deleteButton);
+            deleteButton.addEventListener("click", () => {
+                more.open = false;
+                deleteSavingsTarget(target);
+            });
+            moreMenu.append(returnFunds, spend, complete, deleteButton);
+            more.append(moreSummary, moreMenu);
+            actions.append(deposit, more);
             card.append(actions);
             activeList.append(card);
         } else {
@@ -499,17 +545,31 @@ function renderSavingsTargets() {
 
             const actions = document.createElement("div");
             actions.className = "target-actions";
+            const more = document.createElement("details");
+            more.className = "target-more-actions target-more-actions-completed";
+            const moreSummary = document.createElement("summary");
+            moreSummary.textContent = "Kelola";
+            const moreMenu = document.createElement("div");
+            moreMenu.className = "target-more-menu";
             const reopen = document.createElement("button");
             reopen.type = "button";
             reopen.className = "secondary-action";
             reopen.textContent = "↶ Batalkan selesai";
-            reopen.addEventListener("click", () => reopenSavingsTarget(target));
+            reopen.addEventListener("click", () => {
+                more.open = false;
+                reopenSavingsTarget(target);
+            });
             const deleteButton = document.createElement("button");
             deleteButton.type = "button";
             deleteButton.className = "secondary-action target-delete-action";
             deleteButton.textContent = "Hapus target";
-            deleteButton.addEventListener("click", () => deleteSavingsTarget(target));
-            actions.append(reopen, deleteButton);
+            deleteButton.addEventListener("click", () => {
+                more.open = false;
+                deleteSavingsTarget(target);
+            });
+            moreMenu.append(reopen, deleteButton);
+            more.append(moreSummary, moreMenu);
+            actions.append(more);
             card.append(actions);
             completedList.append(card);
         }
