@@ -225,7 +225,7 @@ fileInput.addEventListener("change", async () => {
                     })
                     .map((item) => item.text.trim())
                     .filter(Boolean)
-                    .join("\\n")
+                    .join("\n")
             }
         };
         const receipt = extractReceipt(result.data.text || "");
