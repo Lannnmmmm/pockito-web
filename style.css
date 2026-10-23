@@ -1386,15 +1386,28 @@ button:disabled {
     font-weight: 700;
 }
 .target-modal-form input,
-.target-modal-form select {
+.target-modal-form select,
+.target-modal-form textarea {
     width: 100%;
     min-height: 48px;
     margin: 0;
     padding: 12px 13px;
     color: var(--text);
+    font: inherit;
     background: var(--background);
     border: 1px solid var(--border);
     border-radius: 12px;
+}
+.target-modal-form textarea {
+    min-height: 92px;
+    resize: vertical;
+    line-height: 1.5;
+}
+.target-modal-note-hint {
+    display: block;
+    margin-top: 6px;
+    color: var(--muted);
+    font-size: 12px;
 }
 .target-modal-wallet-balance {
     display: block;
@@ -1428,7 +1441,8 @@ button:disabled {
     background: #252c27;
 }
 :root[data-theme="dark"] .target-modal-form input,
-:root[data-theme="dark"] .target-modal-form select {
+:root[data-theme="dark"] .target-modal-form select,
+:root[data-theme="dark"] .target-modal-form textarea {
     color: var(--text);
     background: #1b211d;
     border-color: var(--border);
