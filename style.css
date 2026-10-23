@@ -1438,3 +1438,57 @@ button:disabled {
     .target-modal-actions { flex-direction: column-reverse; }
     .target-modal-actions button { width: 100%; }
 }
+
+
+/* Target completion confirmation summary */
+.target-complete-summary {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin: 18px 0;
+}
+.target-complete-summary > div {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    padding: 13px;
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: 13px;
+}
+.target-complete-summary span,
+.target-complete-leftover span {
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.4;
+}
+.target-complete-summary strong {
+    font-size: 14px;
+    overflow-wrap: anywhere;
+}
+.target-complete-extra {
+    margin: 0;
+    padding: 11px 12px;
+    color: var(--text);
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    font-size: 12px;
+    line-height: 1.5;
+}
+.target-complete-leftover {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 13px 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+}
+.target-complete-leftover strong {
+    font-size: 14px;
+    text-align: right;
+}
+@media (max-width: 390px) {
+    .target-complete-summary { grid-template-columns: 1fr; }
+}
