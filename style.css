@@ -2174,3 +2174,33 @@ button:disabled {
     .wallet-add-form-actions button { width: 100%; }
     .wallet-icon-picker { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
 }
+
+/* Tighten controls inside wallet forms and dialogs */
+.wallet-form-close,
+.wallet-modal-close {
+    min-height: 36px;
+    margin-top: 0;
+}
+.wallet-icon-choice,
+.wallet-color-choice,
+.wallet-actions-popover button,
+.wallet-add-form-actions button,
+.wallet-modal-actions button {
+    margin-top: 0;
+}
+.wallet-color-choice {
+    min-height: 0;
+    padding: 0;
+}
+.wallet-icon-choice {
+    min-height: 0;
+}
+.wallet-add-form-actions .secondary-action,
+.wallet-modal-actions .secondary-action {
+    width: auto;
+    margin-top: 0;
+}
+.wallet-add-form-actions button,
+.wallet-modal-actions button {
+    min-height: 44px;
+}
