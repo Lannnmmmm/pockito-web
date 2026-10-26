@@ -3414,3 +3414,42 @@ button:disabled {
     border-bottom: 1px solid var(--border-color, rgba(128, 128, 128, 0.25));
 }
 .credit-all-bills-content { padding: 0.85rem; }
+
+
+/* Credit comfort pass: compact upcoming installments and expandable schedules */
+.credit-schedule-details {
+    margin-top: 12px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+}
+.credit-schedule-details > summary {
+    cursor: pointer;
+    padding: 11px 13px;
+    color: var(--primary-dark);
+    background: color-mix(in srgb, var(--background) 70%, var(--surface));
+    font-size: 12px;
+    font-weight: 650;
+    list-style-position: inside;
+}
+.credit-schedule-details[open] > summary {
+    border-bottom: 1px solid var(--border);
+}
+.credit-schedule-details > h4 {
+    margin: 13px 13px 9px;
+    font-size: 13px;
+}
+.credit-schedule-details .credit-installment-list {
+    padding: 0 10px 10px;
+}
+.credit-upcoming-installment {
+    background: color-mix(in srgb, var(--background) 45%, var(--surface));
+}
+.credit-upcoming-installment .credit-payment-toggle {
+    width: auto;
+}
+@media (max-width: 600px) {
+    .credit-schedule-details > summary { padding: 12px; }
+    .credit-upcoming-installment .credit-installment-row-top { flex-direction: row; align-items: flex-start; }
+    .credit-upcoming-installment .credit-installment-amount { text-align: right; }
+}
