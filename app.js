@@ -2716,6 +2716,50 @@ function renderCreditPlans() {
         list.append(card);
     }
 
+    const upcomingBillList = document.getElementById("credit-upcoming-bill-list");
+    const upcomingBillEmpty = document.getElementById("credit-upcoming-bill-empty");
+    if (upcomingBillList && upcomingBillEmpty) {
+        upcomingBillList.replaceChildren();
+        const upcoming = [];
+        for (const plan of cachedCreditPlans) {
+            const accountName = accountById.get(plan.credit_account_id)?.name || "Akun kredit";
+            for (const installment of installmentsByPlan.get(plan.id) || []) {
+                const remaining = creditRemaining(installment, "principal") + creditRemaining(installment, "interest") + creditRemaining(installment, "fee");
+                if (remaining <= 0 || installment.status === "paid" || installment.status === "cancelled") continue;
+                upcoming.push({ plan, installment, accountName, remaining, overdue: installment.due_date < creditLocalDate() });
+            }
+        }
+        upcoming.sort((a, b) => a.installment.due_date.localeCompare(b.installment.due_date));
+        const nearest = upcoming.slice(0, 3);
+        nearest.forEach(({ plan, installment, accountName, remaining, overdue }) => {
+            const row = document.createElement("article");
+            row.className = "credit-installment-row";
+            const top = document.createElement("div");
+            top.className = "credit-installment-row-top";
+            const meta = document.createElement("div");
+            const title = document.createElement("strong");
+            title.textContent = plan.description + " · " + installment.installment_number + "/" + plan.tenor_months;
+            const detail = document.createElement("small");
+            detail.textContent = accountName + " · jatuh tempo " + installment.due_date;
+            const state = document.createElement("span");
+            state.className = "credit-installment-status";
+            state.textContent = overdue ? "Terlambat" : installment.status === "partial" ? "Dibayar sebagian" : "Belum dibayar";
+            meta.append(title, detail, state);
+            const amount = document.createElement("div");
+            amount.className = "credit-installment-amount";
+            amount.textContent = creditMoney(remaining);
+            top.append(meta, amount);
+            const action = document.createElement("button");
+            action.type = "button";
+            action.className = "secondary-action credit-payment-toggle";
+            action.textContent = "Lihat cicilan";
+            action.addEventListener("click", () => creditSection.querySelector('[data-credit-tab="plans"]')?.click());
+            row.append(top, action);
+            upcomingBillList.append(row);
+        });
+        upcomingBillEmpty.hidden = nearest.length > 0;
+    }
+
     const billList = document.getElementById("credit-bill-list");
     const billEmpty = document.getElementById("credit-bill-empty");
     const billFilter = document.getElementById("credit-bill-filter")?.value || "all";
