@@ -3453,3 +3453,114 @@ button:disabled {
     .credit-upcoming-installment .credit-installment-row-top { flex-direction: row; align-items: flex-start; }
     .credit-upcoming-installment .credit-installment-amount { text-align: right; }
 }
+
+
+/* Kredit — cleaner, calmer dashboard layout */
+.credit-page-heading {
+  align-items: flex-end;
+  gap: 18px;
+  margin-bottom: 20px;
+}
+.credit-page-heading h2 {
+  margin: 5px 0 7px;
+  letter-spacing: -0.035em;
+  font-size: clamp(25px, 3vw, 32px);
+}
+.credit-page-heading .panel-description { max-width: 540px; margin-bottom: 0; line-height: 1.6; }
+.credit-beta-badge {
+  border: 1px solid var(--border);
+  background: var(--surface, var(--panel));
+  color: var(--muted);
+  padding: 8px 12px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.credit-notice {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface, var(--panel));
+  box-shadow: none;
+  margin-bottom: 18px;
+}
+.credit-subnav {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 5px;
+  padding: 5px;
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  background: var(--surface, var(--panel));
+  margin-bottom: 18px;
+}
+.credit-subtab {
+  min-height: 42px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 650;
+  padding: 9px 12px;
+  transition: background .18s ease, color .18s ease, border-color .18s ease;
+}
+.credit-subtab:hover { background: var(--surface-soft, var(--panel)); color: var(--text); }
+.credit-subtab.active {
+  color: var(--text);
+  background: var(--surface-soft, var(--panel));
+  border-color: var(--border);
+  box-shadow: 0 2px 5px rgba(0,0,0,.04);
+}
+.credit-pane { animation: credit-pane-enter .18s ease-out; }
+@keyframes credit-pane-enter {
+  from { opacity: .55; transform: translateY(3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.credit-metric-grid { gap: 12px; margin-bottom: 16px; }
+.credit-metric-card {
+  border-radius: 16px;
+  padding: 18px;
+  box-shadow: none;
+}
+.credit-metric-card p { margin: 12px 0 8px; }
+.credit-metric-card strong { letter-spacing: -.025em; }
+.credit-content-panel { border-radius: 17px; padding: clamp(16px, 2.5vw, 24px); box-shadow: none; }
+.credit-panel-heading { margin-bottom: 18px; }
+.credit-panel-heading h3 { letter-spacing: -.02em; }
+.credit-empty-state {
+  border: 1px dashed var(--border);
+  border-radius: 14px;
+  background: transparent;
+  padding: 28px 18px;
+}
+.credit-empty-state h3 { margin-top: 10px; }
+.credit-account-card, .credit-plan-card {
+  border-radius: 14px;
+  box-shadow: none;
+}
+.credit-account-card { padding: 16px; }
+.credit-plan-card { padding: 17px; }
+.credit-bill-section-title { margin-top: 22px; margin-bottom: 10px; }
+.credit-all-bills-details {
+  margin-top: 18px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  overflow: hidden;
+}
+.credit-all-bills-details > summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 14px 16px;
+  font-weight: 650;
+  color: var(--text);
+  background: var(--surface, var(--panel));
+}
+.credit-all-bills-details > summary::-webkit-details-marker { display: none; }
+.credit-all-bills-details > summary::after { content: "+"; float: right; color: var(--muted); font-size: 18px; line-height: 1; }
+.credit-all-bills-details[open] > summary::after { content: "−"; }
+.credit-all-bills-content { padding: 0 14px 14px; }
+@media (max-width: 600px) {
+  .credit-page-heading { align-items: flex-start; flex-direction: column; }
+  .credit-subnav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .credit-subtab { min-height: 40px; padding: 9px 8px; font-size: 12px; }
+  .credit-metric-grid { gap: 9px; }
+  .credit-content-panel { padding: 15px; }
+}
