@@ -2379,6 +2379,7 @@ const CREDIT_TYPE_LABELS = {
     installment_loan: "Pinjaman cicilan",
     other: "Lainnya"
 };
+let editingCreditAccountId = null;
 function renderCreditAccounts() {
     if (!creditSection) return;
     const list = document.getElementById("credit-account-list");
@@ -2409,7 +2410,15 @@ function renderCreditAccounts() {
         status.className = account.is_active ? "credit-account-status" : "credit-account-status inactive";
         status.textContent = account.is_active ? "Aktif" : "Nonaktif";
         meta.append(limit, due, status);
-        card.append(main, meta);
+        const actions = document.createElement("div");
+        actions.className = "credit-account-card-actions";
+        const edit = document.createElement("button");
+        edit.type = "button";
+        edit.className = "secondary-action credit-account-edit";
+        edit.textContent = "Edit akun";
+        edit.addEventListener("click", () => beginEditCreditAccount(account));
+        actions.append(edit);
+        card.append(main, meta, actions);
         list.append(card);
     }
 }
@@ -2456,13 +2465,36 @@ if (creditSection) {
         accountForm.hidden = !visible;
         if (addToggle) addToggle.hidden = visible;
         const emptyCta = creditSection.querySelector("[data-credit-open-form]");
-        if (emptyCta) emptyCta.hidden = visible;
+        if (emptyCta) emptyCta.hidden = visible || cachedCreditAccounts.length > 0;
         if (visible) document.getElementById("credit-account-name").focus();
     }
-    if (addToggle) addToggle.addEventListener("click", () => setCreditFormVisible(true));
-    if (cancelButton) cancelButton.addEventListener("click", () => {
+    function resetCreditAccountForm() {
+        editingCreditAccountId = null;
         accountForm.reset();
-        showMessage(note, "Formulir ditutup.");
+        submitButton.textContent = "Simpan akun";
+        if (cancelButton) cancelButton.textContent = "Batal";
+    }
+    function beginEditCreditAccount(account) {
+        editingCreditAccountId = account.id;
+        document.getElementById("credit-account-name").value = account.name || "";
+        document.getElementById("credit-account-provider").value = account.provider || "";
+        document.getElementById("credit-account-type").value = account.account_type || "other";
+        document.getElementById("credit-account-limit").value = account.credit_limit ?? "";
+        document.getElementById("credit-account-billing-day").value = account.billing_day ?? "";
+        document.getElementById("credit-account-due-day").value = account.due_day ?? "";
+        submitButton.textContent = "Simpan perubahan";
+        if (cancelButton) cancelButton.textContent = "Batal edit";
+        showMessage(note, `Mengedit akun "${account.name}".`);
+        setCreditFormVisible(true);
+        accountForm.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+    if (addToggle) addToggle.addEventListener("click", () => {
+        resetCreditAccountForm();
+        setCreditFormVisible(true);
+    });
+    if (cancelButton) cancelButton.addEventListener("click", () => {
+        resetCreditAccountForm();
+        showMessage(note, "Perubahan dibatalkan.");
         setCreditFormVisible(false);
     });
     creditSection.querySelectorAll("[data-credit-open-form]").forEach((button) => {
@@ -2486,27 +2518,42 @@ if (creditSection) {
             showMessage(note, "Periksa nama, limit, dan tanggal. Tanggal harus antara 1–31.", true);
             return;
         }
-        if (cachedCreditAccounts.some((account) => account.name.toLocaleLowerCase("id-ID") === name.toLocaleLowerCase("id-ID"))) {
-            showMessage(note, "Nama akun ini sudah ada. Gunakan nama yang berbeda.", true);
+        if (cachedCreditAccounts.some((account) =>
+            account.id !== editingCreditAccountId &&
+            account.name.toLocaleLowerCase("id-ID") === name.toLocaleLowerCase("id-ID")
+        )) {
+            showMessage(note, "Nama akun ini sudah dipakai akun lain. Gunakan nama yang berbeda.", true);
             return;
         }
         submitButton.disabled = true;
-        showMessage(note, "Menyimpan akun kredit...");
+        showMessage(note, editingCreditAccountId ? "Menyimpan perubahan akun..." : "Menyimpan akun kredit...");
+        const payload = {
+            name,
+            provider: provider || null,
+            account_type: type,
+            credit_limit: creditLimit,
+            billing_day: billingDay,
+            due_day: dueDay
+        };
         try {
-            const { error } = await supabase.from("credit_accounts").insert({
-                user_id: currentUser.id,
-                name,
-                provider: provider || null,
-                account_type: type,
-                credit_limit: creditLimit,
-                billing_day: billingDay,
-                due_day: dueDay
-            });
-            if (error) throw error;
+            let result;
+            if (editingCreditAccountId) {
+                result = await supabase.from("credit_accounts")
+                    .update(payload)
+                    .eq("id", editingCreditAccountId)
+                    .eq("user_id", currentUser.id);
+            } else {
+                result = await supabase.from("credit_accounts")
+                    .insert({ ...payload, user_id: currentUser.id });
+            }
+            if (result.error) throw result.error;
+            const wasEditing = Boolean(editingCreditAccountId);
             await loadCreditAccounts();
-            accountForm.reset();
+            resetCreditAccountForm();
             setCreditFormVisible(false);
-            showMessage(note, `Akun "${name}" berhasil disimpan.`);
+            showMessage(note, wasEditing
+                ? `Akun "${name}" berhasil diperbarui.`
+                : `Akun "${name}" berhasil disimpan.`);
         } catch (error) {
             console.error("Gagal menyimpan akun kredit:", error);
             showMessage(note, error.message?.includes("credit_accounts")
