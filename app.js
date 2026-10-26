@@ -85,6 +85,9 @@ const rupiah = new Intl.NumberFormat("id-ID", {
 let currentUser = null;
 let currentWallets = [];
 let currentCategories = [];
+let cachedCreditPayments = [];
+let cachedCreditPlans = [];
+let cachedCreditInstallments = [];
 let cachedSavingsTargets = [];
 let cachedTargetMovements = [];
 let selectedNewTargetIcon = "🐷";
@@ -294,7 +297,10 @@ function walletRecordedBalance(walletId) {
     const transfersIn = cachedTargetMovements
         .filter((item) => item.wallet_id === walletId && item.movement_type === "return")
         .reduce((sum, item) => sum + Number(item.amount), 0);
-    return income - expense - transfersOut + transfersIn;
+    const creditPrincipalPaid = cachedCreditPayments
+        .filter((item) => item.wallet_id === walletId)
+        .reduce((sum, item) => sum + Number(item.principal_amount || 0), 0);
+    return income - expense - transfersOut + transfersIn - creditPrincipalPaid;
 }
 
 async function loadSavingsTargets() {
@@ -2465,6 +2471,426 @@ async function loadCreditAccounts() {
         note.style.color = "";
     }
 }
+
+function creditLocalDate(date = new Date()) {
+    const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+    return local.toISOString().slice(0, 10);
+}
+function creditLocalDateTime(date = new Date()) {
+    const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+    return local.toISOString().slice(0, 16);
+}
+function creditField(labelText, control) {
+    const field = document.createElement("div");
+    field.className = "form-field";
+    const label = document.createElement("label");
+    label.textContent = labelText;
+    label.htmlFor = control.id;
+    field.append(label, control);
+    return field;
+}
+function creditInput(id, type, value, min = "0", step = "1") {
+    const input = document.createElement("input");
+    input.id = id;
+    input.type = type;
+    if (type === "number") { input.min = min; input.step = step; }
+    if (value !== undefined && value !== null) input.value = value;
+    return input;
+}
+function creditSelect(id, choices, placeholder) {
+    const select = document.createElement("select");
+    select.id = id;
+    if (placeholder) {
+        const option = document.createElement("option");
+        option.value = "";
+        option.textContent = placeholder;
+        select.append(option);
+    }
+    choices.forEach(({ value, label }) => {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = label;
+        select.append(option);
+    });
+    return select;
+}
+function creditMoney(value) {
+    return rupiah.format(Math.max(0, Number(value) || 0));
+}
+function creditRemaining(installment, key) {
+    return Math.max(0, Math.round((Number(installment[key + "_due"] || 0) - Number(installment[key + "_paid"] || 0)) * 100) / 100);
+}
+function creditInstallmentLabel(installment) {
+    if (installment.status === "paid") return "Lunas";
+    if (installment.status === "cancelled") return "Dibatalkan";
+    if (installment.status === "partial") return "Dibayar sebagian";
+    if (installment.due_date < creditLocalDate()) return "Terlambat";
+    return "Belum dibayar";
+}
+function renderCreditPlans() {
+    const list = document.getElementById("credit-plan-list");
+    const empty = document.getElementById("credit-plan-empty");
+    if (!list || !empty) return;
+    list.replaceChildren();
+    empty.hidden = cachedCreditPlans.length > 0;
+    const accountById = new Map(cachedCreditAccounts.map((account) => [account.id, account]));
+    const installmentsByPlan = new Map();
+    for (const item of cachedCreditInstallments) {
+        if (!installmentsByPlan.has(item.credit_plan_id)) installmentsByPlan.set(item.credit_plan_id, []);
+        installmentsByPlan.get(item.credit_plan_id).push(item);
+    }
+    let outstandingTotal = 0;
+    let dueThisMonth = 0;
+    const currentMonth = creditLocalDate().slice(0, 7);
+    for (const plan of cachedCreditPlans) {
+        const installments = installmentsByPlan.get(plan.id) || [];
+        const remainingPrincipal = installments.reduce((sum, item) => sum + creditRemaining(item, "principal"), 0);
+        const remainingInterest = installments.reduce((sum, item) => sum + creditRemaining(item, "interest"), 0);
+        const remainingFees = installments.reduce((sum, item) => sum + creditRemaining(item, "fee"), 0);
+        const remainingTotal = remainingPrincipal + remainingInterest + remainingFees;
+        outstandingTotal += remainingTotal;
+        dueThisMonth += installments.filter((item) => item.due_date && item.due_date.startsWith(currentMonth) && item.status !== "paid" && item.status !== "cancelled")
+            .reduce((sum, item) => sum + creditRemaining(item, "principal") + creditRemaining(item, "interest") + creditRemaining(item, "fee"), 0);
+
+        const card = document.createElement("article");
+        card.className = "credit-plan-card";
+        const header = document.createElement("div");
+        header.className = "credit-plan-card-header";
+        const titleBlock = document.createElement("div");
+        const title = document.createElement("h3");
+        title.textContent = plan.description;
+        const account = document.createElement("p");
+        account.textContent = (accountById.get(plan.credit_account_id)?.name || "Akun kredit") +
+            " · " + plan.tenor_months + " bulan" +
+            (Number(plan.interest_total) > 0 ? " · bunga " + creditMoney(plan.interest_total) : " · tanpa bunga");
+        titleBlock.append(title, account);
+        const status = document.createElement("span");
+        status.className = "credit-plan-status" + (plan.status === "completed" ? " completed" : "");
+        status.textContent = plan.status === "completed" ? "Lunas" : "Aktif";
+        header.append(titleBlock, status);
+        card.append(header);
+
+        const summary = document.createElement("div");
+        summary.className = "credit-plan-summary";
+        [
+            ["Sisa pokok", creditMoney(remainingPrincipal)],
+            ["Sisa bunga/biaya", creditMoney(remainingInterest + remainingFees)],
+            ["Total sisa", creditMoney(remainingTotal)]
+        ].forEach(([labelText, value]) => {
+            const box = document.createElement("div");
+            const label = document.createElement("span");
+            label.textContent = labelText;
+            const strong = document.createElement("strong");
+            strong.textContent = value;
+            box.append(label, strong);
+            summary.append(box);
+        });
+        card.append(summary);
+
+        const scheduleHeading = document.createElement("h4");
+        scheduleHeading.textContent = "Jadwal pembayaran";
+        card.append(scheduleHeading);
+        const schedule = document.createElement("div");
+        schedule.className = "credit-installment-list";
+        installments.sort((a, b) => a.installment_number - b.installment_number).forEach((installment) => {
+            const row = document.createElement("div");
+            row.className = "credit-installment-row";
+            const top = document.createElement("div");
+            top.className = "credit-installment-row-top";
+            const meta = document.createElement("div");
+            const number = document.createElement("strong");
+            number.textContent = "Cicilan " + installment.installment_number + "/" + plan.tenor_months;
+            const due = document.createElement("small");
+            due.textContent = "Jatuh tempo " + installment.due_date;
+            const state = document.createElement("span");
+            state.className = "credit-installment-status";
+            state.textContent = creditInstallmentLabel(installment);
+            meta.append(number, due, state);
+            const amount = document.createElement("div");
+            amount.className = "credit-installment-amount";
+            const left = creditRemaining(installment, "principal") + creditRemaining(installment, "interest") + creditRemaining(installment, "fee");
+            amount.textContent = creditMoney(left);
+            top.append(meta, amount);
+            row.append(top);
+
+            if (installment.status !== "paid" && installment.status !== "cancelled") {
+                const toggle = document.createElement("button");
+                toggle.type = "button";
+                toggle.className = "secondary-action credit-payment-toggle";
+                toggle.textContent = "＋ Catat pembayaran";
+                const form = document.createElement("form");
+                form.className = "credit-payment-form";
+                form.hidden = true;
+                const grid = document.createElement("div");
+                grid.className = "credit-form-grid";
+                const prefix = "credit-pay-" + installment.id;
+                const principal = creditInput(prefix + "-principal", "number", creditRemaining(installment, "principal"), "0", "0.01");
+                const interest = creditInput(prefix + "-interest", "number", creditRemaining(installment, "interest"), "0", "0.01");
+                const fee = creditInput(prefix + "-fee", "number", creditRemaining(installment, "fee"), "0", "0.01");
+                const wallet = creditSelect(prefix + "-wallet", currentWallets.map((w) => ({ value: w.id, label: w.name })), "Pilih dompet");
+                const category = creditSelect(prefix + "-category", currentCategories.filter((c) => c.type === "expense").map((c) => ({ value: c.id, label: c.name })), "Pilih kategori bunga/biaya");
+                const paidAt = creditInput(prefix + "-date", "datetime-local", creditLocalDateTime(), undefined, undefined);
+                principal.required = true; interest.required = true; fee.required = true;
+                wallet.required = true; paidAt.required = true;
+                grid.append(
+                    creditField("Pokok dibayar (Rp)", principal),
+                    creditField("Bunga dibayar (Rp)", interest),
+                    creditField("Biaya dibayar (Rp)", fee),
+                    creditField("Dompet pembayaran", wallet),
+                    creditField("Kategori bunga/biaya", category),
+                    creditField("Tanggal dan waktu bayar", paidAt)
+                );
+                const hint = document.createElement("p");
+                hint.className = "credit-plan-empty-note";
+                hint.textContent = "Pokok mengurangi saldo dompet melalui ledger kredit; hanya bunga/biaya yang menjadi transaksi pengeluaran.";
+                const actions = document.createElement("div");
+                actions.className = "credit-form-actions";
+                const cancel = document.createElement("button");
+                cancel.type = "button"; cancel.className = "secondary-action"; cancel.textContent = "Batal";
+                const submit = document.createElement("button");
+                submit.type = "submit"; submit.textContent = "Simpan pembayaran";
+                const message = document.createElement("p");
+                message.className = "credit-form-note";
+                message.setAttribute("role", "status");
+                actions.append(cancel, submit);
+                form.append(grid, hint, actions, message);
+                toggle.addEventListener("click", () => { form.hidden = !form.hidden; });
+                cancel.addEventListener("click", () => { form.hidden = true; });
+                form.addEventListener("submit", async (event) => {
+                    event.preventDefault();
+                    if (!currentUser) { showMessage(message, "Silakan masuk kembali.", true); return; }
+                    const p = Number(principal.value);
+                    const i = Number(interest.value);
+                    const f = Number(fee.value);
+                    const paidDate = paidAt.value;
+                    if (![p, i, f].every((n) => Number.isFinite(n) && n >= 0) || p + i + f <= 0 || !wallet.value || !paidDate) {
+                        showMessage(message, "Isi nominal pembayaran, dompet, serta tanggal dengan benar.", true);
+                        return;
+                    }
+                    if (i + f > 0 && !category.value) {
+                        showMessage(message, "Pilih kategori pengeluaran untuk bunga/biaya.", true);
+                        return;
+                    }
+                    submit.disabled = true;
+                    showMessage(message, "Menyimpan pembayaran secara aman...");
+                    try {
+                        const { error } = await supabase.rpc("record_credit_installment_payment", {
+                            p_installment_id: installment.id,
+                            p_wallet_id: wallet.value,
+                            p_principal_amount: p,
+                            p_interest_amount: i,
+                            p_fee_amount: f,
+                            p_paid_at: new Date(paidDate).toISOString(),
+                            p_expense_category_id: i + f > 0 ? category.value : null
+                        });
+                        if (error) throw error;
+                        await loadCreditPlans();
+                        await loadTransactions();
+                        await loadWallets();
+                        showMessage(document.getElementById("credit-plan-message"), "Pembayaran berhasil dicatat.");
+                    } catch (error) {
+                        console.error("Gagal mencatat pembayaran cicilan:", error);
+                        showMessage(message, error.message || "Pembayaran gagal disimpan. Pastikan migration kredit terbaru sudah dijalankan.", true);
+                    } finally {
+                        submit.disabled = false;
+                    }
+                });
+                row.append(toggle, form);
+            }
+            schedule.append(row);
+        });
+        card.append(schedule);
+        list.append(card);
+    }
+    const metrics = creditSection?.querySelectorAll(".credit-metric-grid .credit-metric-card strong");
+    if (metrics?.length >= 3) {
+        metrics[0].textContent = creditMoney(outstandingTotal);
+        metrics[1].textContent = creditMoney(dueThisMonth);
+        metrics[2].textContent = cachedCreditAccounts.filter((a) => a.is_active).length + " akun";
+    }
+    const billMetrics = creditSection?.querySelectorAll(".credit-bill-summary .credit-metric-card strong");
+    if (billMetrics?.length >= 2) {
+        billMetrics[0].textContent = creditMoney(outstandingTotal);
+        billMetrics[1].textContent = creditMoney(cachedCreditPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0));
+    }
+}
+async function loadCreditPlans() {
+    if (!currentUser) return;
+    const [plansResult, paymentsResult] = await Promise.all([
+        supabase.from("credit_plans")
+            .select("id, credit_account_id, transaction_id, description, principal_amount, interest_type, interest_total, fee_total, tenor_months, start_date, status, created_at")
+            .eq("user_id", currentUser.id)
+            .order("created_at", { ascending: false }),
+        supabase.from("credit_payments")
+            .select("id, credit_account_id, wallet_id, amount, principal_amount, interest_amount, fee_amount, transaction_id, paid_at")
+            .eq("user_id", currentUser.id)
+            .order("paid_at", { ascending: false })
+    ]);
+    if (plansResult.error) throw plansResult.error;
+    if (paymentsResult.error) throw paymentsResult.error;
+    cachedCreditPlans = plansResult.data || [];
+    cachedCreditPayments = paymentsResult.data || [];
+    if (cachedCreditPlans.length) {
+        const { data, error } = await supabase.from("credit_installments")
+            .select("id, credit_plan_id, installment_number, due_date, principal_due, interest_due, fee_due, principal_paid, interest_paid, fee_paid, status")
+            .eq("user_id", currentUser.id)
+            .order("due_date", { ascending: true });
+        if (error) throw error;
+        cachedCreditInstallments = data || [];
+    } else {
+        cachedCreditInstallments = [];
+    }
+    renderCreditPlans();
+    renderWalletList();
+    renderHomeWalletBalances();
+}
+function populateCreditPlanForm() {
+    const accountSelect = document.getElementById("credit-plan-account");
+    const categorySelect = document.getElementById("credit-plan-category");
+    const transactionSelect = document.getElementById("credit-plan-existing-transaction");
+    if (!accountSelect || !categorySelect || !transactionSelect) return;
+    const selectedAccount = accountSelect.value;
+    accountSelect.replaceChildren();
+    const accountPlaceholder = document.createElement("option");
+    accountPlaceholder.value = ""; accountPlaceholder.textContent = "Pilih akun kredit";
+    accountSelect.append(accountPlaceholder);
+    cachedCreditAccounts.filter((account) => account.is_active).forEach((account) => {
+        const option = document.createElement("option");
+        option.value = account.id; option.textContent = account.name;
+        accountSelect.append(option);
+    });
+    if (cachedCreditAccounts.some((account) => account.id === selectedAccount && account.is_active)) accountSelect.value = selectedAccount;
+
+    const selectedCategory = categorySelect.value;
+    categorySelect.replaceChildren();
+    const catPlaceholder = document.createElement("option");
+    catPlaceholder.value = ""; catPlaceholder.textContent = "Pilih kategori";
+    categorySelect.append(catPlaceholder);
+    currentCategories.filter((category) => category.type === "expense").forEach((category) => {
+        const option = document.createElement("option");
+        option.value = category.id; option.textContent = category.name;
+        categorySelect.append(option);
+    });
+    if ([...categorySelect.options].some((option) => option.value === selectedCategory)) categorySelect.value = selectedCategory;
+
+    const selectedTransaction = transactionSelect.value;
+    transactionSelect.replaceChildren();
+    const transactionPlaceholder = document.createElement("option");
+    transactionPlaceholder.value = ""; transactionPlaceholder.textContent = "Pilih transaksi pembelian";
+    transactionSelect.append(transactionPlaceholder);
+    cachedTransactions.filter((transaction) => transaction.type === "expense").forEach((transaction) => {
+        const option = document.createElement("option");
+        option.value = transaction.id;
+        option.textContent = transaction.transaction_date + " · " + creditMoney(transaction.amount) + " · " + (transaction.description || "Pengeluaran");
+        transactionSelect.append(option);
+    });
+    if ([...transactionSelect.options].some((option) => option.value === selectedTransaction)) transactionSelect.value = selectedTransaction;
+}
+function setCreditPlanFormVisible(visible) {
+    const form = document.getElementById("credit-plan-form");
+    const toggle = document.getElementById("credit-plan-add-toggle");
+    if (!form || !toggle) return;
+    form.hidden = !visible;
+    toggle.hidden = visible;
+    if (visible) {
+        populateCreditPlanForm();
+        const today = creditLocalDate();
+        const purchaseDate = document.getElementById("credit-plan-purchase-date");
+        const dueDate = document.getElementById("credit-plan-first-due");
+        if (!purchaseDate.value) purchaseDate.value = today;
+        if (!dueDate.value) {
+            const nextMonth = new Date();
+            nextMonth.setMonth(nextMonth.getMonth() + 1);
+            dueDate.value = creditLocalDate(nextMonth);
+        }
+        document.getElementById("credit-plan-description").focus();
+    }
+}
+function updateCreditPlanPurchaseMode() {
+    const mode = document.getElementById("credit-plan-purchase-mode")?.value;
+    const categoryField = document.getElementById("credit-plan-category-field");
+    const category = document.getElementById("credit-plan-category");
+    const transactionField = document.getElementById("credit-plan-transaction-field");
+    const transaction = document.getElementById("credit-plan-existing-transaction");
+    if (!categoryField || !transactionField) return;
+    categoryField.hidden = mode !== "create";
+    category.required = mode === "create";
+    transactionField.hidden = mode !== "link";
+    transaction.required = mode === "link";
+}
+async function submitCreditPlanForm(event) {
+    event.preventDefault();
+    const form = document.getElementById("credit-plan-form");
+    const message = document.getElementById("credit-plan-message");
+    const submit = form.querySelector('button[type="submit"]');
+    if (!currentUser) { showMessage(message, "Silakan masuk kembali.", true); return; }
+    const accountId = document.getElementById("credit-plan-account").value;
+    const description = document.getElementById("credit-plan-description").value.trim();
+    const principal = Number(document.getElementById("credit-plan-principal").value);
+    const tenor = Number(document.getElementById("credit-plan-tenor").value);
+    const interestType = document.getElementById("credit-plan-interest-type").value;
+    const interest = Number(document.getElementById("credit-plan-interest").value);
+    const fee = Number(document.getElementById("credit-plan-fee").value);
+    const purchaseDate = document.getElementById("credit-plan-purchase-date").value;
+    const firstDue = document.getElementById("credit-plan-first-due").value;
+    const paidCount = Number(document.getElementById("credit-plan-paid-count").value);
+    const mode = document.getElementById("credit-plan-purchase-mode").value;
+    const category = document.getElementById("credit-plan-category").value;
+    const existingTransaction = document.getElementById("credit-plan-existing-transaction").value;
+    if (!accountId || !description || !Number.isFinite(principal) || principal <= 0 ||
+        !Number.isInteger(tenor) || tenor < 1 || tenor > 600 ||
+        !Number.isFinite(interest) || interest < 0 || !Number.isFinite(fee) || fee < 0 ||
+        !purchaseDate || !firstDue || !Number.isInteger(paidCount) || paidCount < 0 || paidCount > tenor ||
+        (interestType === "none" && interest !== 0) ||
+        (mode === "create" && !category) || (mode === "link" && !existingTransaction)) {
+        showMessage(message, "Periksa akun, nominal, tenor, tanggal, bunga/biaya, dan pilihan transaksi pembelian.", true);
+        return;
+    }
+    if (mode === "link") {
+        const linked = cachedTransactions.find((item) => item.id === existingTransaction);
+        if (!linked || Number(linked.amount) !== principal) {
+            showMessage(message, "Pilih transaksi pengeluaran dengan nominal yang sama persis dengan harga pokok.", true);
+            return;
+        }
+    }
+    submit.disabled = true;
+    showMessage(message, "Membuat jadwal cicilan...");
+    try {
+        const { error } = await supabase.rpc("create_credit_plan_with_schedule", {
+            p_credit_account_id: accountId,
+            p_description: description,
+            p_principal_amount: principal,
+            p_interest_type: interestType,
+            p_interest_total: interest,
+            p_fee_total: fee,
+            p_tenor_months: tenor,
+            p_first_due_date: firstDue,
+            p_purchase_date: purchaseDate,
+            p_purchase_record_mode: mode,
+            p_purchase_category_id: mode === "create" ? category : null,
+            p_existing_transaction_id: mode === "link" ? existingTransaction : null,
+            p_paid_installments: paidCount
+        });
+        if (error) throw error;
+        form.reset();
+        document.getElementById("credit-plan-interest").value = "0";
+        document.getElementById("credit-plan-fee").value = "0";
+        document.getElementById("credit-plan-paid-count").value = "0";
+        document.getElementById("credit-plan-purchase-mode").value = "create";
+        updateCreditPlanPurchaseMode();
+        await loadTransactions();
+        await loadCreditPlans();
+        await loadWallets();
+        setCreditPlanFormVisible(false);
+        showMessage(document.getElementById("credit-plan-message"), "Jadwal cicilan berhasil dibuat.");
+    } catch (error) {
+        console.error("Gagal membuat jadwal cicilan:", error);
+        showMessage(message, error.message || "Jadwal cicilan gagal dibuat. Pastikan migration kredit terbaru sudah dijalankan.", true);
+    } finally {
+        submit.disabled = false;
+    }
+}
+
 if (creditSection) {
     const creditTabs = creditSection.querySelectorAll("[data-credit-tab]");
     const creditPanes = creditSection.querySelectorAll("[data-credit-pane]");
