@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pockito — Catatan Keuangan</title>
-    <link rel="stylesheet" href="style.css?v=20261027-credit-plans-4">
+    <link rel="stylesheet" href="style.css?v=20261027-credit-plans-5">
 </head>
 <body>
     <main class="app">
@@ -562,20 +562,8 @@
                                     <input id="credit-plan-tenor" type="number" min="1" max="600" step="1" required value="12">
                                 </div>
                                 <div class="form-field">
-                                    <label for="credit-plan-interest-type">Jenis bunga</label>
-                                    <select id="credit-plan-interest-type" required>
-                                        <option value="none">Tanpa bunga</option>
-                                        <option value="fixed">Bunga tetap</option>
-                                        <option value="variable">Bunga berubah (estimasi total)</option>
-                                    </select>
-                                </div>
-                                <div class="form-field">
-                                    <label for="credit-plan-interest">Total bunga (Rp)</label>
-                                    <input id="credit-plan-interest" type="number" min="0" step="1" value="0" required>
-                                </div>
-                                <div class="form-field">
-                                    <label for="credit-plan-fee">Total biaya tambahan (Rp)</label>
-                                    <input id="credit-plan-fee" type="number" min="0" step="1" value="0" required>
+                                    <label for="credit-plan-monthly-payment">Cicilan per bulan (Rp)</label>
+                                    <input id="credit-plan-monthly-payment" type="number" min="1" step="1" required placeholder="Contoh: 550000">
                                 </div>
                                 <div class="form-field">
                                     <label for="credit-plan-purchase-date">Tanggal pembelian</label>
@@ -606,7 +594,7 @@
                                     <select id="credit-plan-existing-transaction"><option value="">Pilih transaksi</option></select>
                                 </div>
                             </div>
-                            <p class="credit-form-note">Bunga dan biaya dibagi rata ke jadwal bulanan; sisa pembulatan rupiah dibagikan ke angsuran awal. Untuk cicilan lama, angsuran terdahulu ditandai lunas tanpa membuat transaksi pembayaran baru.</p>
+                            <p class="credit-form-note">Masukkan jumlah cicilan bulanan sesuai tagihan. Pockito menghitung selisih total pembayaran dan harga pokok sebagai estimasi bunga/biaya. Untuk cicilan lama, angsuran terdahulu ditandai lunas tanpa membuat transaksi pembayaran baru.</p>
                             <div class="credit-form-actions">
                                 <button type="button" id="credit-plan-cancel" class="secondary-action">Batal</button>
                                 <button type="submit">Buat jadwal cicilan</button>
@@ -679,6 +667,6 @@
         </section>
     </main>
 
-    <script type="module" src="app.js?v=20261027-credit-plans-4"></script>
+    <script type="module" src="app.js?v=20261027-credit-plans-5"></script>
 </body>
 </html>
