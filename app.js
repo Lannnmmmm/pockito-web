@@ -2013,6 +2013,13 @@ async function openUserSession(user) {
             );
         }
         await loadTransactions();
+        try {
+            await loadCreditAccounts();
+        } catch (creditLoadError) {
+            console.error("Akun kredit belum bisa dimuat:", creditLoadError);
+            cachedCreditAccounts = [];
+            renderCreditAccounts();
+        }
         showDashboard();
         showView("home");
     } catch (error) {
@@ -2302,6 +2309,8 @@ document.getElementById("logout-button").addEventListener("click", async () => {
     currentCategories = [];
     cachedSavingsTargets = [];
     cachedTargetMovements = [];
+    cachedCreditAccounts = [];
+    renderCreditAccounts();
     renderSavingsTargets();
     renderWalletOptions();
     renderWalletList();
@@ -2360,9 +2369,65 @@ for (const button of viewButtons) {
     button.addEventListener("click", () => showView(button.dataset.viewTarget));
 }
 
-/* Credit & installments UI scaffold.
-   Persistence is intentionally not enabled until the database schema and accounting flow are implemented. */
+/* Cicilan & Kredit: akun kredit tersimpan di Supabase.
+   Pencatatan rencana cicilan/pembayaran sengaja belum diaktifkan agar saldo tidak salah hitung. */
 const creditSection = document.querySelector('[data-view="credit"]');
+let cachedCreditAccounts = [];
+const CREDIT_TYPE_LABELS = {
+    credit_card: "Kartu kredit",
+    paylater: "PayLater",
+    installment_loan: "Pinjaman cicilan",
+    other: "Lainnya"
+};
+function renderCreditAccounts() {
+    if (!creditSection) return;
+    const list = document.getElementById("credit-account-list");
+    const empty = creditSection.querySelector(".credit-empty-state-compact");
+    const active = cachedCreditAccounts.filter((account) => account.is_active);
+    list.replaceChildren();
+    if (empty) empty.hidden = cachedCreditAccounts.length > 0;
+    list.hidden = cachedCreditAccounts.length === 0;
+    const accountCount = creditSection.querySelector(".credit-metric-grid .credit-metric-card:nth-child(3) strong");
+    if (accountCount) accountCount.textContent = `${active.length} akun`;
+    for (const account of cachedCreditAccounts) {
+        const card = document.createElement("article");
+        card.className = "credit-account-card";
+        const main = document.createElement("div");
+        main.className = "credit-account-card-main";
+        const title = document.createElement("h3");
+        title.textContent = account.name;
+        const subtitle = document.createElement("p");
+        subtitle.textContent = [account.provider, CREDIT_TYPE_LABELS[account.account_type] || "Lainnya"].filter(Boolean).join(" · ");
+        main.append(title, subtitle);
+        const meta = document.createElement("div");
+        meta.className = "credit-account-card-meta";
+        const limit = document.createElement("span");
+        limit.textContent = account.credit_limit === null ? "Limit tidak diatur" : `Limit ${rupiah.format(Number(account.credit_limit))}`;
+        const due = document.createElement("span");
+        due.textContent = account.due_day ? `Jatuh tempo tgl. ${account.due_day}` : "Jatuh tempo belum diatur";
+        const status = document.createElement("span");
+        status.className = account.is_active ? "credit-account-status" : "credit-account-status inactive";
+        status.textContent = account.is_active ? "Aktif" : "Nonaktif";
+        meta.append(limit, due, status);
+        card.append(main, meta);
+        list.append(card);
+    }
+}
+async function loadCreditAccounts() {
+    const note = document.querySelector("#credit-account-form .credit-form-note");
+    const { data, error } = await supabase
+        .from("credit_accounts")
+        .select("id, name, provider, account_type, credit_limit, billing_day, due_day, is_active, created_at")
+        .eq("user_id", currentUser.id)
+        .order("created_at", { ascending: false });
+    if (error) throw error;
+    cachedCreditAccounts = data || [];
+    renderCreditAccounts();
+    if (note) {
+        note.textContent = "Akun tersimpan aman di akunmu. Pengaturan cicilan dan pembayaran akan diaktifkan pada tahap berikutnya.";
+        note.style.color = "";
+    }
+}
 if (creditSection) {
     const creditTabs = creditSection.querySelectorAll("[data-credit-tab]");
     const creditPanes = creditSection.querySelectorAll("[data-credit-pane]");
@@ -2385,6 +2450,8 @@ if (creditSection) {
     const accountForm = document.getElementById("credit-account-form");
     const addToggle = document.getElementById("credit-add-toggle");
     const cancelButton = document.getElementById("credit-account-cancel");
+    const submitButton = accountForm.querySelector('button[type="submit"]');
+    const note = accountForm.querySelector(".credit-form-note");
     function setCreditFormVisible(visible) {
         accountForm.hidden = !visible;
         if (addToggle) addToggle.hidden = visible;
@@ -2395,14 +2462,59 @@ if (creditSection) {
     if (addToggle) addToggle.addEventListener("click", () => setCreditFormVisible(true));
     if (cancelButton) cancelButton.addEventListener("click", () => {
         accountForm.reset();
+        showMessage(note, "Formulir ditutup.");
         setCreditFormVisible(false);
     });
     creditSection.querySelectorAll("[data-credit-open-form]").forEach((button) => {
         button.addEventListener("click", () => setCreditFormVisible(true));
     });
-    if (accountForm) accountForm.addEventListener("submit", (event) => {
+    accountForm.addEventListener("submit", async (event) => {
         event.preventDefault();
-        showMessage(accountForm.querySelector(".credit-form-note"), "Penyimpanan belum aktif; belum ada data yang disimpan.");
+        if (!currentUser) { showMessage(note, "Silakan masuk kembali.", true); return; }
+        const name = document.getElementById("credit-account-name").value.trim();
+        const provider = document.getElementById("credit-account-provider").value.trim();
+        const type = document.getElementById("credit-account-type").value;
+        const limitText = document.getElementById("credit-account-limit").value.trim();
+        const billingText = document.getElementById("credit-account-billing-day").value.trim();
+        const dueText = document.getElementById("credit-account-due-day").value.trim();
+        const creditLimit = limitText === "" ? null : Number(limitText);
+        const billingDay = billingText === "" ? null : Number(billingText);
+        const dueDay = dueText === "" ? null : Number(dueText);
+        if (!name || (creditLimit !== null && (!Number.isFinite(creditLimit) || creditLimit < 0)) ||
+            (billingDay !== null && (!Number.isInteger(billingDay) || billingDay < 1 || billingDay > 31)) ||
+            (dueDay !== null && (!Number.isInteger(dueDay) || dueDay < 1 || dueDay > 31))) {
+            showMessage(note, "Periksa nama, limit, dan tanggal. Tanggal harus antara 1–31.", true);
+            return;
+        }
+        if (cachedCreditAccounts.some((account) => account.name.toLocaleLowerCase("id-ID") === name.toLocaleLowerCase("id-ID"))) {
+            showMessage(note, "Nama akun ini sudah ada. Gunakan nama yang berbeda.", true);
+            return;
+        }
+        submitButton.disabled = true;
+        showMessage(note, "Menyimpan akun kredit...");
+        try {
+            const { error } = await supabase.from("credit_accounts").insert({
+                user_id: currentUser.id,
+                name,
+                provider: provider || null,
+                account_type: type,
+                credit_limit: creditLimit,
+                billing_day: billingDay,
+                due_day: dueDay
+            });
+            if (error) throw error;
+            await loadCreditAccounts();
+            accountForm.reset();
+            setCreditFormVisible(false);
+            showMessage(note, `Akun "${name}" berhasil disimpan.`);
+        } catch (error) {
+            console.error("Gagal menyimpan akun kredit:", error);
+            showMessage(note, error.message?.includes("credit_accounts")
+                ? "Tabel akun kredit belum terbaca. Pastikan migration berhasil dijalankan lalu muat ulang halaman."
+                : "Akun gagal disimpan. Periksa koneksi dan kebijakan RLS Supabase.", true);
+        } finally {
+            submitButton.disabled = false;
+        }
     });
     showCreditPane("overview");
 }
