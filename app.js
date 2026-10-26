@@ -2021,10 +2021,17 @@ async function openUserSession(user) {
         await loadTransactions();
         try {
             await loadCreditAccounts();
+            await loadCreditPlans();
         } catch (creditLoadError) {
-            console.error("Akun kredit belum bisa dimuat:", creditLoadError);
+            console.error("Data Cicilan & Kredit belum bisa dimuat:", creditLoadError);
             cachedCreditAccounts = [];
+            cachedCreditPlans = [];
+            cachedCreditInstallments = [];
+            cachedCreditPayments = [];
             renderCreditAccounts();
+            renderCreditPlans();
+            const notice = creditSection?.querySelector(".credit-notice p");
+            if (notice) notice.textContent = "Akun kredit tersedia, tetapi jadwal cicilan belum dapat dimuat. Pastikan migration Cicilan & Kredit terbaru sudah dijalankan di Supabase.";
         }
         showDashboard();
         showView("home");
@@ -2316,7 +2323,11 @@ document.getElementById("logout-button").addEventListener("click", async () => {
     cachedSavingsTargets = [];
     cachedTargetMovements = [];
     cachedCreditAccounts = [];
+    cachedCreditPlans = [];
+    cachedCreditInstallments = [];
+    cachedCreditPayments = [];
     renderCreditAccounts();
+    renderCreditPlans();
     renderSavingsTargets();
     renderWalletOptions();
     renderWalletList();
@@ -2466,6 +2477,8 @@ async function loadCreditAccounts() {
     if (error) throw error;
     cachedCreditAccounts = data || [];
     renderCreditAccounts();
+    populateCreditPlanForm();
+    renderCreditPlans();
     if (note) {
         note.textContent = "Akun tersimpan aman di akunmu. Pengaturan cicilan dan pembayaran akan diaktifkan pada tahap berikutnya.";
         note.style.color = "";
@@ -3004,6 +3017,47 @@ if (creditSection) {
         }
     });
     showCreditPane("overview");
+    const planForm = document.getElementById("credit-plan-form");
+    const planAddToggle = document.getElementById("credit-plan-add-toggle");
+    const planCancel = document.getElementById("credit-plan-cancel");
+    const purchaseMode = document.getElementById("credit-plan-purchase-mode");
+    const purchaseDate = document.getElementById("credit-plan-purchase-date");
+    const firstDueDate = document.getElementById("credit-plan-first-due");
+    const interestType = document.getElementById("credit-plan-interest-type");
+    const interestTotal = document.getElementById("credit-plan-interest");
+    const tenorInput = document.getElementById("credit-plan-tenor");
+    const paidCountInput = document.getElementById("credit-plan-paid-count");
+    if (planAddToggle) planAddToggle.addEventListener("click", () => {
+        setCreditPlanFormVisible(true);
+        updateCreditPlanPurchaseMode();
+    });
+    if (planCancel) planCancel.addEventListener("click", () => {
+        planForm.reset();
+        document.getElementById("credit-plan-interest").value = "0";
+        document.getElementById("credit-plan-fee").value = "0";
+        document.getElementById("credit-plan-paid-count").value = "0";
+        document.getElementById("credit-plan-purchase-mode").value = "create";
+        updateCreditPlanPurchaseMode();
+        setCreditPlanFormVisible(false);
+        showMessage(document.getElementById("credit-plan-message"), "");
+    });
+    if (planForm) planForm.addEventListener("submit", submitCreditPlanForm);
+    if (purchaseMode) purchaseMode.addEventListener("change", updateCreditPlanPurchaseMode);
+    if (interestType) interestType.addEventListener("change", () => {
+        if (interestType.value === "none") interestTotal.value = "0";
+        else if (Number(interestTotal.value) === 0) interestTotal.value = "";
+    });
+    if (tenorInput) tenorInput.addEventListener("input", () => {
+        paidCountInput.max = tenorInput.value || "600";
+        if (Number(paidCountInput.value) > Number(tenorInput.value)) paidCountInput.value = tenorInput.value;
+    });
+    if (purchaseDate && !purchaseDate.value) purchaseDate.value = creditLocalDate();
+    if (firstDueDate && !firstDueDate.value) {
+        const nextMonth = new Date();
+        nextMonth.setMonth(nextMonth.getMonth() + 1);
+        firstDueDate.value = creditLocalDate(nextMonth);
+    }
+    updateCreditPlanPurchaseMode();
 }
 
 
