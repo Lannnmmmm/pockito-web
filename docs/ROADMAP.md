@@ -33,11 +33,13 @@ Dokumen ini memisahkan kemampuan yang sudah tersedia dari ide pengembangan. Road
 
 ### Cicilan & Kredit — tahap awal
 - [x] Menambahkan wireframe UI empat halaman kredit
-- [x] Menyiapkan rancangan migration database dan RLS (belum diterapkan ke Supabase)
-- [ ] Terapkan migration dan verifikasi RLS pada project Supabase
-- [ ] Hubungkan daftar dan formulir akun kredit ke database
-- [ ] Implementasikan jadwal cicilan dan tagihan
-- [ ] Buat RPC pembayaran atomik dan integrasi saldo dompet tanpa pengeluaran pokok ganda
+- [x] Menyiapkan migration database dan RLS untuk akun, jadwal, tagihan, dan pembayaran
+- [x] Hubungkan daftar/formulir akun kredit ke database
+- [x] Formulir cicilan baru dan cicilan yang sudah berjalan
+- [x] Jadwal bulanan dengan pembagian pokok, bunga, dan biaya
+- [x] RPC pembuatan jadwal dan pembayaran atomik
+- [x] Integrasi saldo dompet: pokok bukan pengeluaran kedua; bunga/biaya menjadi pengeluaran
+- [ ] Jalankan migration RPC terbaru di Supabase dan uji end-to-end
 
 ## Prioritas pengembangan berikutnya
 
