@@ -3338,3 +3338,18 @@ button:disabled {
     .credit-form-actions button { width: 100%; }
     .credit-bill-filter { max-width: 135px; }
 }
+
+
+/* Cicilan & Kredit — saved account cards */
+.credit-account-list { display: grid; gap: 12px; margin-top: 18px; }
+.credit-account-card { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 18px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface, var(--panel)); }
+.credit-account-card-main { min-width: 0; }
+.credit-account-card-main h3 { margin: 0 0 5px; font-size: 15px; overflow-wrap: anywhere; }
+.credit-account-card-main p { margin: 0; color: var(--muted); font-size: 12px; }
+.credit-account-card-meta { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px 12px; color: var(--muted); font-size: 11px; text-align: right; }
+.credit-account-status { padding: 5px 9px; border-radius: 999px; background: rgba(78,139,104,.13); color: #4e8b68; font-weight: 700; }
+.credit-account-status.inactive { background: rgba(128,128,128,.13); color: var(--muted); }
+@media (max-width: 600px) {
+  .credit-account-card { align-items: flex-start; flex-direction: column; gap: 12px; padding: 15px; }
+  .credit-account-card-meta { justify-content: flex-start; text-align: left; }
+}
