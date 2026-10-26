@@ -2791,7 +2791,7 @@ function populateCreditPlanForm() {
     const transactionPlaceholder = document.createElement("option");
     transactionPlaceholder.value = ""; transactionPlaceholder.textContent = "Pilih transaksi pembelian";
     transactionSelect.append(transactionPlaceholder);
-    cachedTransactions.filter((transaction) => transaction.type === "expense").forEach((transaction) => {
+    cachedTransactions.filter((transaction) => transaction.type === "expense" && transaction.wallet_id === null).forEach((transaction) => {
         const option = document.createElement("option");
         option.value = transaction.id;
         option.textContent = transaction.transaction_date + " · " + creditMoney(transaction.amount) + " · " + (transaction.description || "Pengeluaran");
