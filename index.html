@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pockito — Catatan Keuangan</title>
-    <link rel="stylesheet" href="style.css?v=20261027-credit-plans-5">
+    <link rel="stylesheet" href="style.css?v=20261027-credit-plans-6">
 </head>
 <body>
     <main class="app">
@@ -652,13 +652,25 @@
                                 <option value="overdue">Terlambat</option>
                             </select>
                         </div>
-                        <div id="credit-bill-list" class="credit-plan-list"></div>
-                        <div id="credit-bill-empty" class="credit-empty-state">
-                            <span class="credit-empty-icon" aria-hidden="true">▧</span>
-                            <h3>Belum ada tagihan</h3>
-                            <p>Tagihan akan muncul setelah kamu membuat jadwal cicilan.</p>
-                            <button type="button" class="secondary-action" data-credit-tab-link="plans">Tambah cicilan</button>
+                        <h4 class="credit-bill-section-title">Tagihan terdekat</h4>
+                        <div id="credit-upcoming-bill-list" class="credit-plan-list"></div>
+                        <div id="credit-upcoming-bill-empty" class="credit-empty-state">
+                            <span class="credit-empty-icon" aria-hidden="true">✓</span>
+                            <h3>Tidak ada tagihan dekat</h3>
+                            <p>Belum ada cicilan yang perlu dibayar. Semua tagihan terbuka akan tetap bisa dilihat di daftar lengkap.</p>
                         </div>
+                        <details id="credit-all-bills-details" class="credit-all-bills-details">
+                            <summary>Lihat seluruh tagihan</summary>
+                            <div class="credit-all-bills-content">
+                                <div id="credit-bill-list" class="credit-plan-list"></div>
+                                <div id="credit-bill-empty" class="credit-empty-state">
+                                    <span class="credit-empty-icon" aria-hidden="true">▧</span>
+                                    <h3>Belum ada tagihan</h3>
+                                    <p>Tagihan akan muncul setelah kamu membuat jadwal cicilan.</p>
+                                    <button type="button" class="secondary-action" data-credit-tab-link="plans">Tambah cicilan</button>
+                                </div>
+                            </div>
+                        </details>
                     </div>
                 </div>
             </section>
@@ -667,6 +679,6 @@
         </section>
     </main>
 
-    <script type="module" src="app.js?v=20261027-credit-plans-5"></script>
+    <script type="module" src="app.js?v=20261027-credit-plans-6"></script>
 </body>
 </html>
