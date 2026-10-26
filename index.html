@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pockito — Catatan Keuangan</title>
-    <link rel="stylesheet" href="style.css?v=20261027-credit-plans-6">
+    <link rel="stylesheet" href="style.css?v=20261027-credit-comfort-7">
 </head>
 <body>
     <main class="app">
@@ -601,6 +601,14 @@
                             </div>
                             <p id="credit-plan-message" role="status" aria-live="polite"></p>
                         </form>
+                        <h4 class="credit-bill-section-title">Cicilan terdekat</h4>
+                        <div id="credit-upcoming-installment-list" class="credit-plan-list"></div>
+                        <div id="credit-upcoming-installment-empty" class="credit-empty-state credit-empty-state-compact">
+                            <span class="credit-empty-icon" aria-hidden="true">✓</span>
+                            <h3>Tidak ada cicilan yang menunggu</h3>
+                            <p>Tagihan cicilan yang belum lunas akan muncul di sini, maksimal tiga yang paling dekat jatuh temponya.</p>
+                        </div>
+                        <h4 class="credit-bill-section-title">Semua rencana cicilan</h4>
                         <div id="credit-plan-list" class="credit-plan-list"></div>
                         <div id="credit-plan-empty" class="credit-empty-state">
                             <span class="credit-empty-icon" aria-hidden="true">▦</span>
@@ -679,6 +687,6 @@
         </section>
     </main>
 
-    <script type="module" src="app.js?v=20261027-credit-plans-6"></script>
+    <script type="module" src="app.js?v=20261027-credit-comfort-7"></script>
 </body>
 </html>
