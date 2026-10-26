@@ -2380,6 +2380,34 @@ const CREDIT_TYPE_LABELS = {
     other: "Lainnya"
 };
 let editingCreditAccountId = null;
+function beginEditCreditAccount(account) {
+    const accountForm = document.getElementById("credit-account-form");
+    const addToggle = document.getElementById("credit-add-toggle");
+    const cancelButton = document.getElementById("credit-account-cancel");
+    const note = accountForm?.querySelector(".credit-form-note");
+    if (!accountForm) return;
+
+    editingCreditAccountId = account.id;
+    document.getElementById("credit-account-name").value = account.name || "";
+    document.getElementById("credit-account-provider").value = account.provider || "";
+    document.getElementById("credit-account-type").value = account.account_type || "other";
+    document.getElementById("credit-account-limit").value = account.credit_limit ?? "";
+    document.getElementById("credit-account-billing-day").value = account.billing_day ?? "";
+    document.getElementById("credit-account-due-day").value = account.due_day ?? "";
+
+    const submitButton = accountForm.querySelector('button[type="submit"]');
+    if (submitButton) submitButton.textContent = "Simpan perubahan";
+    if (cancelButton) cancelButton.textContent = "Batal edit";
+    if (note) showMessage(note, `Mengedit akun "${account.name}".`);
+
+    accountForm.hidden = false;
+    if (addToggle) addToggle.hidden = true;
+    const emptyCta = creditSection?.querySelector("[data-credit-open-form]");
+    if (emptyCta) emptyCta.hidden = true;
+    accountForm.scrollIntoView({ behavior: "smooth", block: "center" });
+    document.getElementById("credit-account-name").focus({ preventScroll: true });
+}
+
 function renderCreditAccounts() {
     if (!creditSection) return;
     const list = document.getElementById("credit-account-list");
@@ -2473,20 +2501,6 @@ if (creditSection) {
         accountForm.reset();
         submitButton.textContent = "Simpan akun";
         if (cancelButton) cancelButton.textContent = "Batal";
-    }
-    function beginEditCreditAccount(account) {
-        editingCreditAccountId = account.id;
-        document.getElementById("credit-account-name").value = account.name || "";
-        document.getElementById("credit-account-provider").value = account.provider || "";
-        document.getElementById("credit-account-type").value = account.account_type || "other";
-        document.getElementById("credit-account-limit").value = account.credit_limit ?? "";
-        document.getElementById("credit-account-billing-day").value = account.billing_day ?? "";
-        document.getElementById("credit-account-due-day").value = account.due_day ?? "";
-        submitButton.textContent = "Simpan perubahan";
-        if (cancelButton) cancelButton.textContent = "Batal edit";
-        showMessage(note, `Mengedit akun "${account.name}".`);
-        setCreditFormVisible(true);
-        accountForm.scrollIntoView({ behavior: "smooth", block: "center" });
     }
     if (addToggle) addToggle.addEventListener("click", () => {
         resetCreditAccountForm();
