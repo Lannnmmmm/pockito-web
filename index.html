@@ -418,14 +418,14 @@
                         <h2>Cicilan &amp; Kredit</h2>
                         <p class="panel-description">Pantau akun kredit, jadwal cicilan, dan tagihan dalam satu tempat.</p>
                     </div>
-                    <span class="credit-beta-badge">Pratinjau UI</span>
+                    <span class="credit-beta-badge">Tahap 1 · Akun</span>
                 </div>
 
                 <div class="credit-notice" role="status">
                     <span class="credit-notice-icon" aria-hidden="true">ⓘ</span>
                     <div>
                         <strong>Persiapan fitur</strong>
-                        <p>Tampilan sudah disiapkan. Data kredit dan pembayaran belum aktif sampai skema database serta aturan perhitungan saldo selesai dipasang. Tidak ada data contoh yang dicampur dengan keuanganmu.</p>
+                        <p>Penyimpanan akun kredit sudah aktif. Jadwal cicilan, tagihan, dan pembayaran masih disiapkan terpisah agar saldo serta pengeluaran tidak terhitung ganda.</p>
                     </div>
                 </div>
 
@@ -519,13 +519,13 @@
                             <div class="credit-form-note">Formulir ini adalah rancangan UI. Penyimpanan akan diaktifkan setelah migrasi database kredit ditinjau dan dipasang.</div>
                             <div class="credit-form-actions">
                                 <button type="button" id="credit-account-cancel" class="secondary-action">Tutup</button>
-                                <button type="submit" disabled>Simpan akun (belum aktif)</button>
+                                <button type="submit">Simpan akun</button>
                             </div>
                         </form>
                         <div class="credit-empty-state credit-empty-state-compact">
                             <span class="credit-empty-icon" aria-hidden="true">▤</span>
                             <h3>Belum ada akun kredit</h3>
-                            <p>Akun kredit milikmu akan tampil di sini. Belum ada akun yang tersimpan.</p>
+                            <p>Akun kredit milikmu akan tampil di sini setelah kamu menambahkannya.</p>
                             <button type="button" class="secondary-action" data-credit-open-form="true">＋ Tambah akun kredit</button>
                         </div>
                         <div class="credit-account-list" id="credit-account-list" hidden></div>
