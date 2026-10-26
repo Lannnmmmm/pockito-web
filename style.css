@@ -3394,3 +3394,23 @@ button:disabled {
   .credit-installment-row-top { flex-direction: column; }
   .credit-installment-row .credit-installment-amount { text-align: left; }
 }
+
+
+/* Compact upcoming bills with the full history collapsed by default */
+.credit-bill-section-title { margin: 1.2rem 0 0.7rem; font-size: 1rem; }
+.credit-all-bills-details {
+    margin-top: 1rem;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.25));
+    border-radius: 14px;
+    overflow: hidden;
+}
+.credit-all-bills-details > summary {
+    cursor: pointer;
+    padding: 0.9rem 1rem;
+    font-weight: 600;
+    list-style-position: inside;
+}
+.credit-all-bills-details[open] > summary {
+    border-bottom: 1px solid var(--border-color, rgba(128, 128, 128, 0.25));
+}
+.credit-all-bills-content { padding: 0.85rem; }
