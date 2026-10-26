@@ -28,6 +28,7 @@ declare
     v_category_type text;
     v_existing_type text;
     v_existing_amount numeric;
+    v_existing_wallet_id uuid;
     v_total_principal_cents bigint;
     v_total_interest_cents bigint;
     v_total_fee_cents bigint;
@@ -76,11 +77,12 @@ begin
         ) returning id into v_transaction_id;
     elsif p_purchase_record_mode = 'link' then
         if p_existing_transaction_id is null then raise exception 'Pilih transaksi pembelian yang sudah tercatat'; end if;
-        select type, amount into v_existing_type, v_existing_amount
+        select type, amount, wallet_id into v_existing_type, v_existing_amount, v_existing_wallet_id
           from public.transactions
           where id = p_existing_transaction_id and user_id = v_user_id
           for share;
         if not found or v_existing_type <> 'expense' then raise exception 'Transaksi yang ditautkan harus pengeluaran milik akunmu'; end if;
+        if v_existing_wallet_id is not null then raise exception 'Transaksi pembelian kredit yang ditautkan harus tidak mengurangi dompet'; end if;
         if round(v_existing_amount::numeric, 2) <> round(p_principal_amount, 2) then
             raise exception 'Nominal transaksi yang ditautkan harus sama dengan pokok pembelian';
         end if;
