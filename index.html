@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pockito — Catatan Keuangan</title>
-    <link rel="stylesheet" href="style.css?v=20261027-credit-plans-2">
+    <link rel="stylesheet" href="style.css?v=20261027-credit-plans-3">
 </head>
 <body>
     <main class="app">
@@ -664,11 +664,12 @@
                                 <option value="overdue">Terlambat</option>
                             </select>
                         </div>
-                        <div class="credit-empty-state">
+                        <div id="credit-bill-list" class="credit-plan-list"></div>
+                        <div id="credit-bill-empty" class="credit-empty-state">
                             <span class="credit-empty-icon" aria-hidden="true">▧</span>
                             <h3>Belum ada tagihan</h3>
-                            <p>Tagihan akan tercatat di sini setelah jadwal cicilan atau tagihan akun dibuat. Pembayaran belum tersedia pada tahap UI ini.</p>
-                            <button type="button" class="secondary-action" data-credit-tab-link="accounts">Lihat akun kredit</button>
+                            <p>Tagihan akan muncul setelah kamu membuat jadwal cicilan.</p>
+                            <button type="button" class="secondary-action" data-credit-tab-link="plans">Tambah cicilan</button>
                         </div>
                     </div>
                 </div>
@@ -678,6 +679,6 @@
         </section>
     </main>
 
-    <script type="module" src="app.js?v=20261027-credit-plans-2"></script>
+    <script type="module" src="app.js?v=20261027-credit-plans-3"></script>
 </body>
 </html>
