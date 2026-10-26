@@ -169,8 +169,8 @@ begin
     if coalesce(p_principal_amount, -1) < 0 or coalesce(p_interest_amount, -1) < 0 or coalesce(p_fee_amount, -1) < 0 then
         raise exception 'Nominal pembayaran tidak boleh negatif';
     end if;
-    v_total := round(p_principal_amount + p_interest_amount + p_fee_amount, 2);
-    v_expense_total := round(p_interest_amount + p_fee_amount, 2);
+    v_total := round(p_principal_amount, 2) + round(p_interest_amount, 2) + round(p_fee_amount, 2);
+    v_expense_total := round(p_interest_amount, 2) + round(p_fee_amount, 2);
     if v_total <= 0 then raise exception 'Nominal pembayaran harus lebih dari nol'; end if;
 
     select * into v_installment
