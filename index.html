@@ -103,6 +103,9 @@
                 <button type="button" class="nav-tab" data-view-target="targets" aria-current="false" aria-label="Target" title="Target">
                     <span class="nav-icon" aria-hidden="true">◎</span><span>Target</span>
                 </button>
+                <button type="button" class="nav-tab" data-view-target="credit" aria-current="false" aria-label="Cicilan dan Kredit" title="Cicilan & Kredit">
+                    <span class="nav-icon" aria-hidden="true">▤</span><span>Kredit</span>
+                </button>
                 <details class="nav-more">
                     <summary class="nav-tab nav-more-trigger" aria-label="Menu lainnya" title="Menu lainnya">
                         <span class="nav-icon" aria-hidden="true">•••</span><span>Lainnya</span>
@@ -407,7 +410,181 @@
                 </div>
             </section>
 
-            <button id="logout-button" type="button">Keluar</button>
+
+            <section data-view="credit" hidden>
+                <div class="credit-page-heading">
+                    <div>
+                        <p class="section-kicker">KEWAJIBAN KEUANGAN</p>
+                        <h2>Cicilan &amp; Kredit</h2>
+                        <p class="panel-description">Pantau akun kredit, jadwal cicilan, dan tagihan dalam satu tempat.</p>
+                    </div>
+                    <span class="credit-beta-badge">Pratinjau UI</span>
+                </div>
+
+                <div class="credit-notice" role="status">
+                    <span class="credit-notice-icon" aria-hidden="true">ⓘ</span>
+                    <div>
+                        <strong>Persiapan fitur</strong>
+                        <p>Tampilan sudah disiapkan. Data kredit dan pembayaran belum aktif sampai skema database serta aturan perhitungan saldo selesai dipasang. Tidak ada data contoh yang dicampur dengan keuanganmu.</p>
+                    </div>
+                </div>
+
+                <nav class="credit-subnav" aria-label="Navigasi Cicilan dan Kredit">
+                    <button type="button" class="credit-subtab active" data-credit-tab="overview" aria-current="page">Ringkasan</button>
+                    <button type="button" class="credit-subtab" data-credit-tab="accounts" aria-current="false">Akun Kredit</button>
+                    <button type="button" class="credit-subtab" data-credit-tab="detail" aria-current="false">Detail Akun</button>
+                    <button type="button" class="credit-subtab" data-credit-tab="bills" aria-current="false">Tagihan</button>
+                </nav>
+
+                <div class="credit-pane" data-credit-pane="overview">
+                    <div class="credit-metric-grid">
+                        <article class="panel credit-metric-card">
+                            <span class="credit-metric-icon" aria-hidden="true">↗</span>
+                            <p>Total sisa utang</p>
+                            <strong>—</strong>
+                            <small>Menunggu data akun kredit</small>
+                        </article>
+                        <article class="panel credit-metric-card">
+                            <span class="credit-metric-icon" aria-hidden="true">◷</span>
+                            <p>Tagihan belum dibayar</p>
+                            <strong>—</strong>
+                            <small>Periode berjalan</small>
+                        </article>
+                        <article class="panel credit-metric-card">
+                            <span class="credit-metric-icon" aria-hidden="true">▤</span>
+                            <p>Akun kredit aktif</p>
+                            <strong>0 akun</strong>
+                            <small>Kartu kredit, PayLater, pinjaman</small>
+                        </article>
+                    </div>
+                    <div class="panel credit-content-panel">
+                        <div class="credit-panel-heading">
+                            <div>
+                                <p class="section-kicker">JADWAL PEMBAYARAN</p>
+                                <h3>Perlu dibayar</h3>
+                            </div>
+                            <button type="button" class="text-action" data-credit-tab-link="bills">Lihat tagihan →</button>
+                        </div>
+                        <div class="credit-empty-state">
+                            <span class="credit-empty-icon" aria-hidden="true">▦</span>
+                            <h3>Belum ada tagihan</h3>
+                            <p>Tagihan akan muncul di sini setelah akun kredit dan jadwal pembayaran tersedia.</p>
+                            <button type="button" class="secondary-action" data-credit-tab-link="accounts">Kelola akun kredit</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="credit-pane" data-credit-pane="accounts" hidden>
+                    <div class="panel credit-content-panel">
+                        <div class="credit-panel-heading">
+                            <div>
+                                <p class="section-kicker">FASILITAS KREDIT</p>
+                                <h3>Akun Kredit</h3>
+                                <p class="panel-description">Kartu kredit, PayLater, dan pinjaman cicilan.</p>
+                            </div>
+                            <button type="button" id="credit-add-toggle" class="credit-add-button">＋ Tambah akun</button>
+                        </div>
+                        <form id="credit-account-form" class="credit-account-form" hidden>
+                            <div class="credit-form-grid">
+                                <div class="form-field">
+                                    <label for="credit-account-name">Nama akun</label>
+                                    <input id="credit-account-name" type="text" maxlength="80" placeholder="Contoh: PayLater" required>
+                                </div>
+                                <div class="form-field">
+                                    <label for="credit-account-provider">Penyedia</label>
+                                    <input id="credit-account-provider" type="text" maxlength="80" placeholder="Contoh: nama bank atau layanan">
+                                </div>
+                                <div class="form-field">
+                                    <label for="credit-account-type">Jenis akun</label>
+                                    <select id="credit-account-type" required>
+                                        <option value="credit_card">Kartu kredit</option>
+                                        <option value="paylater">PayLater</option>
+                                        <option value="installment_loan">Pinjaman cicilan</option>
+                                        <option value="other">Lainnya</option>
+                                    </select>
+                                </div>
+                                <div class="form-field">
+                                    <label for="credit-account-limit">Limit kredit (Rp, opsional)</label>
+                                    <input id="credit-account-limit" type="number" min="0" step="1" placeholder="Kosongkan jika tidak ada">
+                                </div>
+                                <div class="form-field">
+                                    <label for="credit-account-billing-day">Tanggal cetak tagihan (opsional)</label>
+                                    <input id="credit-account-billing-day" type="number" min="1" max="31" placeholder="1–31">
+                                </div>
+                                <div class="form-field">
+                                    <label for="credit-account-due-day">Tanggal jatuh tempo (opsional)</label>
+                                    <input id="credit-account-due-day" type="number" min="1" max="31" placeholder="1–31">
+                                </div>
+                            </div>
+                            <div class="credit-form-note">Formulir ini adalah rancangan UI. Penyimpanan akan diaktifkan setelah migrasi database kredit ditinjau dan dipasang.</div>
+                            <div class="credit-form-actions">
+                                <button type="button" id="credit-account-cancel" class="secondary-action">Tutup</button>
+                                <button type="submit" disabled>Simpan akun (belum aktif)</button>
+                            </div>
+                        </form>
+                        <div class="credit-empty-state credit-empty-state-compact">
+                            <span class="credit-empty-icon" aria-hidden="true">▤</span>
+                            <h3>Belum ada akun kredit</h3>
+                            <p>Akun kredit milikmu akan tampil di sini. Belum ada akun yang tersimpan.</p>
+                            <button type="button" class="secondary-action" data-credit-open-form="true">＋ Tambah akun kredit</button>
+                        </div>
+                        <div class="credit-account-list" id="credit-account-list" hidden></div>
+                    </div>
+                </div>
+
+                <div class="credit-pane" data-credit-pane="detail" hidden>
+                    <div class="panel credit-content-panel">
+                        <button type="button" class="credit-back-link" data-credit-tab-link="accounts">← Kembali ke akun kredit</button>
+                        <p class="section-kicker">RINCIAN FASILITAS</p>
+                        <h3>Detail Akun</h3>
+                        <div class="credit-empty-state">
+                            <span class="credit-empty-icon" aria-hidden="true">▤</span>
+                            <h3>Pilih akun kredit</h3>
+                            <p>Setelah akun tersedia, detail saldo terutang, limit, transaksi terkait, jadwal cicilan, dan riwayat pembayaran akan ditampilkan di halaman ini.</p>
+                            <button type="button" class="secondary-action" data-credit-tab-link="accounts">Buka daftar akun</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="credit-pane" data-credit-pane="bills" hidden>
+                    <div class="credit-metric-grid credit-bill-summary">
+                        <article class="panel credit-metric-card">
+                            <span class="credit-metric-icon" aria-hidden="true">◷</span>
+                            <p>Total belum dibayar</p>
+                            <strong>—</strong>
+                            <small>Tagihan yang masih terbuka</small>
+                        </article>
+                        <article class="panel credit-metric-card">
+                            <span class="credit-metric-icon" aria-hidden="true">✓</span>
+                            <p>Sudah dibayar</p>
+                            <strong>—</strong>
+                            <small>Riwayat periode berjalan</small>
+                        </article>
+                    </div>
+                    <div class="panel credit-content-panel">
+                        <div class="credit-panel-heading">
+                            <div>
+                                <p class="section-kicker">JADWAL DAN STATUS</p>
+                                <h3>Daftar tagihan</h3>
+                            </div>
+                            <select id="credit-bill-filter" class="credit-bill-filter" aria-label="Filter tagihan">
+                                <option value="all">Semua status</option>
+                                <option value="unpaid">Belum dibayar</option>
+                                <option value="paid">Lunas</option>
+                                <option value="overdue">Terlambat</option>
+                            </select>
+                        </div>
+                        <div class="credit-empty-state">
+                            <span class="credit-empty-icon" aria-hidden="true">▧</span>
+                            <h3>Belum ada tagihan</h3>
+                            <p>Tagihan akan tercatat di sini setelah jadwal cicilan atau tagihan akun dibuat. Pembayaran belum tersedia pada tahap UI ini.</p>
+                            <button type="button" class="secondary-action" data-credit-tab-link="accounts">Lihat akun kredit</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+                        <button id="logout-button" type="button">Keluar</button>
         </section>
     </main>
 
