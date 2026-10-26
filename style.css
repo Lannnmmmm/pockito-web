@@ -3353,3 +3353,9 @@ button:disabled {
   .credit-account-card { align-items: flex-start; flex-direction: column; gap: 12px; padding: 15px; }
   .credit-account-card-meta { justify-content: flex-start; text-align: left; }
 }
+
+.credit-account-card-actions { display: flex; justify-content: flex-end; align-items: center; }
+.credit-account-edit { white-space: nowrap; min-height: 36px; padding: 8px 12px; font-size: 12px; }
+@media (max-width: 600px) {
+  .credit-account-card-actions { width: 100%; justify-content: flex-start; }
+}
