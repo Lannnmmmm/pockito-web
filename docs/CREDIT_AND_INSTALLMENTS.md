@@ -1,20 +1,22 @@
 # Cicilan & Kredit Pockito
 
-Status: **fondasi database dirancang; belum aktif digunakan aplikasi**.
+Status: **UI jadwal cicilan dan pembayaran sudah diimplementasikan; RPC baru aktif setelah migration terbaru dijalankan**.
 
-UI awal sudah tersedia pada menu **Kredit**, tetapi penyimpanan dan pembayaran sengaja belum diaktifkan. Migration ini menambahkan struktur database dan kebijakan RLS saja; migration ini tidak mengubah saldo, transaksi, atau dompet yang sudah ada.
+Akun kredit disimpan melalui UI. Jadwal baru bisa dibuat dari tab **Cicilan**, termasuk cicilan lama dengan jumlah angsuran terdahulu yang sudah dibayar. Migration tambahan membuat jadwal dan pembayaran melalui fungsi PostgreSQL atomik.
 
 ## Berkas migration
 
-- [Migration SQL](../supabase/migrations/20261026_credit_and_installments.sql)
+- [Migration fondasi](../supabase/migrations/20261026_credit_and_installments.sql)
+- [Migration jadwal dan pembayaran atomik](../supabase/migrations/20261027_credit_plans_and_atomic_payments.sql)
 
 ## Cara menerapkan
 
 1. Buka dashboard project Supabase Pockito.
 2. Pilih **SQL Editor** dan buat query baru.
 3. Buka berkas migration SQL di repository, salin seluruh isinya ke SQL Editor.
-4. Tinjau SQL dan jalankan pada project yang benar.
-5. Verifikasi keenam tabel baru tersedia dan RLS aktif sebelum mengaktifkan fitur di frontend.
+4. Tinjau dan jalankan migration fondasi terlebih dahulu jika belum pernah dijalankan.
+5. Jalankan migration jadwal dan pembayaran atomik di project yang sama.
+6. Verifikasi keenam tabel baru tersedia, RLS aktif, dan dua fungsi RPC tersedia sebelum mencoba membuat jadwal atau mencatat pembayaran.
 
 Jangan menaruh service-role key atau kredensial database di frontend atau repository. Jangan menjalankan migration pada project produksi yang salah.
 
@@ -39,14 +41,21 @@ Setiap tabel mempunyai `user_id`, RLS owner-only, dan foreign key komposit untuk
 4. Pembayaran dan alokasinya harus dibuat atomik melalui PostgreSQL function/RPC sebelum tombol pembayaran diaktifkan.
 5. Jangan menampilkan saldo/limit sebagai nilai pasti sampai definisi saldo berjalan dan tagihan diterbitkan disepakati; limit kredit tidak selalu tersedia.
 
-## Tahap berikutnya
+## Perilaku UI saat ini
 
-- Terapkan migration dan verifikasi schema/RLS.
-- Tambahkan pembacaan dan pembuatan akun kredit pada UI.
-- Tambahkan pencatatan pembelian/cicilan dan pembentukan jadwal.
-- Buat RPC transaksional untuk pembayaran dan alokasi; jangan membuat pembayaran dengan beberapa request browser yang dapat gagal di tengah.
-- Integrasikan saldo dompet dengan pembayaran pokok tanpa memasukkan pokok sebagai pengeluaran.
-- Uji akses lintas akun dan skenario bunga, pembayaran sebagian, refund, dan tagihan gabungan.
+- Form cicilan menerima akun, nama pembelian, pokok, tenor, total bunga/biaya, tanggal pembelian, dan jatuh tempo pertama.
+- Pembelian dapat dicatat sebagai transaksi pengeluaran baru, ditautkan ke transaksi pengeluaran yang sudah ada dengan nominal sama, atau tidak dicatat ulang.
+- Untuk cicilan lama, isi jumlah angsuran yang telah dibayar. Angsuran tersebut ditandai lunas sebagai saldo awal; aplikasi tidak membuat ulang transaksi pembayaran historis.
+- Jadwal dibuat per bulan dengan pembagian pokok, bunga, dan biaya dalam satuan sen; selisih pembulatan dibagikan ke angsuran awal.
+- Pembayaran aktual dapat parsial: masukkan pemecahan pokok, bunga, dan biaya. RPC memvalidasi sisa tiap komponen, lalu membuat pembayaran, alokasi, pembaruan status, dan transaksi bunga/biaya dalam satu transaksi database.
+- Saldo dompet dikurangi sebesar pokok dari ledger pembayaran kredit dan sebesar bunga/biaya dari transaksi pengeluaran. Pokok tidak menjadi pengeluaran kedua.
+
+## Batasan dan pengujian
+
+- Angsuran historis yang ditandai lunas tidak menghasilkan catatan pembayaran atau perubahan saldo dompet baru. Jika pembayaran lama belum pernah dicatat di Pockito, saldo historis tersebut tidak otomatis direkonstruksi.
+- Bunga dan biaya total dibagi rata sebagai jadwal estimasi; tagihan aktual yang berbeda harus dikoreksi sesuai bukti dari penyedia kredit sebelum pembayaran dicatat.
+- Migration baru harus dijalankan di Supabase sebelum tombol pembuatan jadwal/pembayaran berfungsi.
+- Uji akses lintas akun, pembayaran sebagian, saldo dompet, dan laporan pengeluaran sebelum mengandalkan angka untuk rekonsiliasi.
 
 ## Batasan
 
