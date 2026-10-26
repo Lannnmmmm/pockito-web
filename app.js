@@ -2360,6 +2360,54 @@ for (const button of viewButtons) {
     button.addEventListener("click", () => showView(button.dataset.viewTarget));
 }
 
+/* Credit & installments UI scaffold.
+   Persistence is intentionally not enabled until the database schema and accounting flow are implemented. */
+const creditSection = document.querySelector('[data-view="credit"]');
+if (creditSection) {
+    const creditTabs = creditSection.querySelectorAll("[data-credit-tab]");
+    const creditPanes = creditSection.querySelectorAll("[data-credit-pane]");
+    function showCreditPane(name) {
+        creditPanes.forEach((pane) => { pane.hidden = pane.dataset.creditPane !== name; });
+        creditTabs.forEach((tab) => {
+            const active = tab.dataset.creditTab === name;
+            tab.classList.toggle("active", active);
+            tab.setAttribute("aria-current", active ? "page" : "false");
+        });
+        if (name === "detail") {
+            const back = creditSection.querySelector(".credit-back-link");
+            if (back) back.focus({ preventScroll: true });
+        }
+    }
+    creditTabs.forEach((tab) => tab.addEventListener("click", () => showCreditPane(tab.dataset.creditTab)));
+    creditSection.querySelectorAll("[data-credit-tab-link]").forEach((button) => {
+        button.addEventListener("click", () => showCreditPane(button.dataset.creditTabLink));
+    });
+    const accountForm = document.getElementById("credit-account-form");
+    const addToggle = document.getElementById("credit-add-toggle");
+    const cancelButton = document.getElementById("credit-account-cancel");
+    function setCreditFormVisible(visible) {
+        accountForm.hidden = !visible;
+        if (addToggle) addToggle.hidden = visible;
+        const emptyCta = creditSection.querySelector("[data-credit-open-form]");
+        if (emptyCta) emptyCta.hidden = visible;
+        if (visible) document.getElementById("credit-account-name").focus();
+    }
+    if (addToggle) addToggle.addEventListener("click", () => setCreditFormVisible(true));
+    if (cancelButton) cancelButton.addEventListener("click", () => {
+        accountForm.reset();
+        setCreditFormVisible(false);
+    });
+    creditSection.querySelectorAll("[data-credit-open-form]").forEach((button) => {
+        button.addEventListener("click", () => setCreditFormVisible(true));
+    });
+    if (accountForm) accountForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        showMessage(accountForm.querySelector(".credit-form-note"), "Penyimpanan belum aktif; belum ada data yang disimpan.");
+    });
+    showCreditPane("overview");
+}
+
+
 const categoryFormToggle = document.getElementById("show-category-form");
 const categoryFormClose = document.getElementById("category-form-close");
 const categoryFormCancel = document.getElementById("category-form-cancel");
