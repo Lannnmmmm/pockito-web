@@ -2890,9 +2890,11 @@ async function submitCreditPlanForm(event) {
     const description = document.getElementById("credit-plan-description").value.trim();
     const principal = Number(document.getElementById("credit-plan-principal").value);
     const tenor = Number(document.getElementById("credit-plan-tenor").value);
-    const interestType = document.getElementById("credit-plan-interest-type").value;
-    const interest = Number(document.getElementById("credit-plan-interest").value);
-    const fee = Number(document.getElementById("credit-plan-fee").value);
+    const monthlyPayment = Number(document.getElementById("credit-plan-monthly-payment").value);
+    const plannedTotalPayment = monthlyPayment * tenor;
+    const interest = plannedTotalPayment - principal;
+    const interestType = interest > 0 ? "fixed" : "none";
+    const fee = 0;
     const purchaseDate = document.getElementById("credit-plan-purchase-date").value;
     const firstDue = document.getElementById("credit-plan-first-due").value;
     const paidCount = Number(document.getElementById("credit-plan-paid-count").value);
@@ -2901,11 +2903,11 @@ async function submitCreditPlanForm(event) {
     const existingTransaction = document.getElementById("credit-plan-existing-transaction").value;
     if (!accountId || !description || !Number.isFinite(principal) || principal <= 0 ||
         !Number.isInteger(tenor) || tenor < 1 || tenor > 600 ||
-        !Number.isFinite(interest) || interest < 0 || !Number.isFinite(fee) || fee < 0 ||
+        !Number.isFinite(monthlyPayment) || monthlyPayment <= 0 ||
+        !Number.isFinite(plannedTotalPayment) || plannedTotalPayment < principal ||
         !purchaseDate || !firstDue || !Number.isInteger(paidCount) || paidCount < 0 || paidCount > tenor ||
-        (interestType === "none" && interest !== 0) ||
         (mode === "create" && !category) || (mode === "link" && !existingTransaction)) {
-        showMessage(message, "Periksa akun, nominal, tenor, tanggal, bunga/biaya, dan pilihan transaksi pembelian.", true);
+        showMessage(message, "Pastikan cicilan per bulan × tenor minimal sama dengan harga pokok, lalu periksa tanggal dan pilihan transaksi pembelian.", true);
         return;
     }
     if (mode === "link") {
@@ -2935,8 +2937,6 @@ async function submitCreditPlanForm(event) {
         });
         if (error) throw error;
         form.reset();
-        document.getElementById("credit-plan-interest").value = "0";
-        document.getElementById("credit-plan-fee").value = "0";
         document.getElementById("credit-plan-paid-count").value = "0";
         document.getElementById("credit-plan-purchase-mode").value = "create";
         updateCreditPlanPurchaseMode();
@@ -3072,8 +3072,6 @@ if (creditSection) {
     const purchaseMode = document.getElementById("credit-plan-purchase-mode");
     const purchaseDate = document.getElementById("credit-plan-purchase-date");
     const firstDueDate = document.getElementById("credit-plan-first-due");
-    const interestType = document.getElementById("credit-plan-interest-type");
-    const interestTotal = document.getElementById("credit-plan-interest");
     const tenorInput = document.getElementById("credit-plan-tenor");
     const paidCountInput = document.getElementById("credit-plan-paid-count");
     if (planAddToggle) planAddToggle.addEventListener("click", () => {
@@ -3082,8 +3080,6 @@ if (creditSection) {
     });
     if (planCancel) planCancel.addEventListener("click", () => {
         planForm.reset();
-        document.getElementById("credit-plan-interest").value = "0";
-        document.getElementById("credit-plan-fee").value = "0";
         document.getElementById("credit-plan-paid-count").value = "0";
         document.getElementById("credit-plan-purchase-mode").value = "create";
         updateCreditPlanPurchaseMode();
@@ -3094,10 +3090,6 @@ if (creditSection) {
     const billFilter = document.getElementById("credit-bill-filter");
     if (billFilter) billFilter.addEventListener("change", renderCreditPlans);
     if (purchaseMode) purchaseMode.addEventListener("change", updateCreditPlanPurchaseMode);
-    if (interestType) interestType.addEventListener("change", () => {
-        if (interestType.value === "none") interestTotal.value = "0";
-        else if (Number(interestTotal.value) === 0) interestTotal.value = "";
-    });
     if (tenorInput) tenorInput.addEventListener("input", () => {
         paidCountInput.max = tenorInput.value || "600";
         if (Number(paidCountInput.value) > Number(tenorInput.value)) paidCountInput.value = tenorInput.value;
