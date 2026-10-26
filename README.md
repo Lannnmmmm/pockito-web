@@ -37,6 +37,12 @@ Pockito adalah aplikasi pencatatan keuangan pribadi berbasis web untuk membantu 
 - Persentase pemasukan yang telah digunakan.
 - Rincian pemasukan dan pengeluaran berdasarkan kategori.
 
+### Cicilan & Kredit (tahap awal)
+- UI awal untuk ringkasan, akun kredit, detail akun, dan tagihan.
+- Rancangan schema SQL untuk akun kredit, cicilan, tagihan, pembayaran, dan alokasi pembayaran.
+- Penyimpanan/pembayaran belum aktif; migration harus diterapkan dan diuji sebelum fitur digunakan.
+- Lihat [rancangan Cicilan & Kredit](docs/CREDIT_AND_INSTALLMENTS.md).
+
 ### Target tabungan
 - Membuat target dengan nama, nominal opsional, dan ikon.
 - Memisahkan dana target dari saldo yang tersedia sesuai mekanisme aplikasi.
@@ -116,7 +122,7 @@ Audit awal yang dilakukan pada Oktober 2026 mencakup pemeriksaan kebijakan RLS, 
 
 ## Dokumentasi
 
-- [Ringkasan audit keamanan](docs/SECURITY.md)
+- [Rancangan Cicilan & Kredit](docs/CREDIT_AND_INSTALLMENTS.md)\n- [Ringkasan audit keamanan](docs/SECURITY.md)
 - [Roadmap pengembangan](docs/ROADMAP.md)
 
 ## Pengembangan berikutnya
