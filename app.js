@@ -3104,8 +3104,10 @@ if (creditSection) {
     });
     if (purchaseDate && !purchaseDate.value) purchaseDate.value = creditLocalDate();
     if (firstDueDate && !firstDueDate.value) {
-        const nextMonth = new Date();
-        nextMonth.setMonth(nextMonth.getMonth() + 1);
+        const todayDate = new Date();
+        const desiredDay = todayDate.getDate();
+        const nextMonth = new Date(todayDate.getFullYear(), todayDate.getMonth() + 1, 1);
+        nextMonth.setDate(Math.min(desiredDay, new Date(nextMonth.getFullYear(), nextMonth.getMonth() + 1, 0).getDate()));
         firstDueDate.value = creditLocalDate(nextMonth);
     }
     updateCreditPlanPurchaseMode();
