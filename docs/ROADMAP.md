@@ -31,6 +31,14 @@ Dokumen ini memisahkan kemampuan yang sudah tersedia dari ide pengembangan. Road
 - [x] RLS aktif pada lima tabel inti
 - [x] Pemeriksaan awal akses lintas akun dan pembersihan data uji
 
+### Cicilan & Kredit — tahap awal
+- [x] Menambahkan wireframe UI empat halaman kredit
+- [x] Menyiapkan rancangan migration database dan RLS (belum diterapkan ke Supabase)
+- [ ] Terapkan migration dan verifikasi RLS pada project Supabase
+- [ ] Hubungkan daftar dan formulir akun kredit ke database
+- [ ] Implementasikan jadwal cicilan dan tagihan
+- [ ] Buat RPC pembayaran atomik dan integrasi saldo dompet tanpa pengeluaran pokok ganda
+
 ## Prioritas pengembangan berikutnya
 
 ### 1. Penyempurnaan UI/UX
