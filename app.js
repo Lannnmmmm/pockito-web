@@ -2480,7 +2480,7 @@ async function loadCreditAccounts() {
     populateCreditPlanForm();
     renderCreditPlans();
     if (note) {
-        note.textContent = "Akun tersimpan aman di akunmu. Pengaturan cicilan dan pembayaran akan diaktifkan pada tahap berikutnya.";
+        note.textContent = "Akun tersimpan aman. Tambahkan cicilan pada tab Cicilan; pembayaran pokok dan bunga diproses terpisah.";
         note.style.color = "";
     }
 }
