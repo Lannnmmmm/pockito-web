@@ -2600,9 +2600,12 @@ function renderCreditPlans() {
         });
         card.append(summary);
 
+        const scheduleDetails = document.createElement("details");
+        scheduleDetails.className = "credit-schedule-details";
+        const scheduleSummary = document.createElement("summary");
+        scheduleSummary.textContent = "Lihat seluruh jadwal (" + installments.length + " cicilan)";
         const scheduleHeading = document.createElement("h4");
         scheduleHeading.textContent = "Jadwal pembayaran";
-        card.append(scheduleHeading);
         const schedule = document.createElement("div");
         schedule.className = "credit-installment-list";
         installments.sort((a, b) => a.installment_number - b.installment_number).forEach((installment) => {
@@ -2712,8 +2715,60 @@ function renderCreditPlans() {
             }
             schedule.append(row);
         });
-        card.append(schedule);
+        scheduleDetails.append(scheduleSummary, scheduleHeading, schedule);
+        card.append(scheduleDetails);
         list.append(card);
+    }
+
+    const upcomingInstallmentList = document.getElementById("credit-upcoming-installment-list");
+    const upcomingInstallmentEmpty = document.getElementById("credit-upcoming-installment-empty");
+    if (upcomingInstallmentList && upcomingInstallmentEmpty) {
+        upcomingInstallmentList.replaceChildren();
+        const upcoming = [];
+        for (const plan of cachedCreditPlans) {
+            const accountName = accountById.get(plan.credit_account_id)?.name || "Akun kredit";
+            for (const installment of installmentsByPlan.get(plan.id) || []) {
+                const remaining = creditRemaining(installment, "principal") + creditRemaining(installment, "interest") + creditRemaining(installment, "fee");
+                if (remaining <= 0 || installment.status === "paid" || installment.status === "cancelled") continue;
+                upcoming.push({ plan, installment, accountName, remaining });
+            }
+        }
+        upcoming.sort((a, b) => a.installment.due_date.localeCompare(b.installment.due_date));
+        upcoming.slice(0, 3).forEach(({ plan, installment, accountName, remaining }) => {
+            const row = document.createElement("article");
+            row.className = "credit-installment-row credit-upcoming-installment";
+            const top = document.createElement("div");
+            top.className = "credit-installment-row-top";
+            const meta = document.createElement("div");
+            const title = document.createElement("strong");
+            title.textContent = plan.description + " · " + installment.installment_number + "/" + plan.tenor_months;
+            const due = document.createElement("small");
+            due.textContent = accountName + " · Jatuh tempo " + installment.due_date;
+            const state = document.createElement("span");
+            state.className = "credit-installment-status";
+            state.textContent = installment.due_date < creditLocalDate() ? "Terlambat" : creditInstallmentLabel(installment);
+            meta.append(title, due, state);
+            const amount = document.createElement("div");
+            amount.className = "credit-installment-amount";
+            amount.textContent = creditMoney(remaining);
+            top.append(meta, amount);
+            const action = document.createElement("button");
+            action.type = "button";
+            action.className = "secondary-action credit-payment-toggle";
+            action.textContent = "Buka jadwal";
+            action.addEventListener("click", () => {
+                const planCards = [...list.querySelectorAll(".credit-plan-card")];
+                const index = cachedCreditPlans.findIndex((item) => item.id === plan.id);
+                const target = planCards[index]?.querySelector(".credit-schedule-details");
+                if (target) {
+                    target.open = true;
+                    target.scrollIntoView({ behavior: "smooth", block: "nearest" });
+                }
+            });
+            row.append(top, action);
+            upcomingInstallmentList.append(row);
+        });
+        upcomingInstallmentEmpty.hidden = upcomingInstallmentList.childElementCount > 0;
     }
 
     const upcomingBillList = document.getElementById("credit-upcoming-bill-list");
