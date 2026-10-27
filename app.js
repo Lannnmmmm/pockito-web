@@ -1879,7 +1879,7 @@ function renderHistoryTransactions() {
     const searchTerm = (document.getElementById("history-search")?.value || "").trim().toLocaleLowerCase("id-ID");
     const typeFilter = document.getElementById("history-type-filter")?.value || "all";
     const filteredTransactions = monthTransactions.filter((transaction) => {
-        const categoryName = getCategoryName(transaction.category_id);
+        const categoryName = currentCategories.find((category) => category.id === transaction.category_id)?.name || "";
         const searchableText = [transaction.description, categoryName, transaction.notes]
             .filter(Boolean).join(" ").toLocaleLowerCase("id-ID");
         return (typeFilter === "all" || transaction.type === typeFilter)
