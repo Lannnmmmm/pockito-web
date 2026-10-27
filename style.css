@@ -4673,3 +4673,26 @@ textarea:focus-visible {
 }
 :root[data-theme="dark"] .history-search-field,
 :root[data-theme="dark"] .history-type-field select { background:var(--surface); color:var(--text); }
+
+
+/* Month-over-month comparison for reports. */
+.report-comparison { margin-top:16px; padding:16px; border:1px solid var(--border); border-radius:16px; background:var(--surface); }
+.report-comparison-heading { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px; }
+.report-comparison-heading h3 { margin:0; font-size:14px; }
+.report-comparison-heading > span { color:var(--muted); font-size:11px; text-align:right; }
+.report-comparison-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+.report-comparison-item { display:flex; flex-direction:column; gap:6px; min-width:0; padding:12px; border-radius:12px; background:var(--surface-muted,var(--background)); }
+.report-comparison-item > span { color:var(--muted); font-size:12px; }
+.report-comparison-item strong { font-size:20px; letter-spacing:-.03em; font-variant-numeric:tabular-nums; }
+.report-comparison-item small { color:var(--muted); font-size:11px; line-height:1.4; }
+.report-change-positive { color:#218451 !important; }
+.report-change-negative { color:#c44840 !important; }
+.report-change-neutral { color:var(--text) !important; }
+:root[data-theme="dark"] .report-change-positive { color:#86d5a5 !important; }
+:root[data-theme="dark"] .report-change-negative { color:#ff9a92 !important; }
+@media (max-width:420px) {
+ .report-comparison { padding:12px; }
+ .report-comparison-grid { grid-template-columns:1fr; }
+ .report-comparison-item { padding:10px 12px; }
+ .report-comparison-item strong { font-size:18px; }
+}
