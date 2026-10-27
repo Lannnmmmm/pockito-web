@@ -1747,6 +1747,110 @@ function renderHomeWalletBalances() {
     container.hidden = false;
 }
 
+
+function renderHomeExpenseComposition() {
+    const bar = document.getElementById("home-expense-bar");
+    const legend = document.getElementById("home-expense-legend");
+    const totalNode = document.getElementById("home-composition-total");
+    const insight = document.getElementById("home-expense-insight");
+    const period = document.getElementById("home-composition-period");
+    if (!bar || !legend || !totalNode || !insight) return;
+
+    const now = new Date();
+    const key = monthKey(now);
+    const transactions = cachedTransactions.filter((item) =>
+        item.type === "expense" && item.transaction_date?.startsWith(key)
+    );
+    const totals = new Map();
+    for (const transaction of transactions) {
+        const category = currentCategories.find((item) => item.id === transaction.category_id);
+        const name = category?.name || "Kategori dihapus";
+        totals.set(name, (totals.get(name) || 0) + Number(transaction.amount));
+    }
+    const entries = [...totals.entries()].sort((a, b) => b[1] - a[1]);
+    const total = entries.reduce((sum, entry) => sum + entry[1], 0);
+    const palette = ["#2764d8", "#e7a52f", "#2f9b69", "#df655b", "#8a75cf", "#32a6b8", "#cf78a5", "#87929f"];
+    totalNode.textContent = rupiah.format(total);
+    if (period) period.textContent = monthLabel(now);
+    bar.replaceChildren();
+    legend.replaceChildren();
+    if (total <= 0 || entries.length === 0) {
+        bar.hidden = true;
+        const empty = document.createElement("p");
+        empty.className = "empty-note";
+        empty.textContent = "Belum ada pengeluaran pada bulan ini.";
+        legend.append(empty);
+        insight.replaceChildren();
+        const icon = document.createElement("span");
+        icon.className = "home-insight-icon";
+        icon.textContent = "✦";
+        const message = document.createElement("p");
+        message.textContent = "Setiap transaksi yang kamu catat akan membantu memperlihatkan pola pengeluaranmu.";
+        insight.append(icon, message);
+        return;
+    }
+    bar.hidden = false;
+    entries.forEach(([name, amount], index) => {
+        const color = palette[index % palette.length];
+        const segment = document.createElement("span");
+        segment.className = "home-expense-segment";
+        segment.style.flexBasis = `${amount / total * 100}%`;
+        segment.style.backgroundColor = color;
+        segment.title = `${name}: ${rupiah.format(amount)}`;
+        bar.append(segment);
+
+        if (index < 4) {
+            const item = document.createElement("div");
+            item.className = "home-expense-legend-item";
+            const swatch = document.createElement("span");
+            swatch.className = "home-expense-swatch";
+            swatch.style.backgroundColor = color;
+            const copy = document.createElement("div");
+            copy.className = "home-expense-legend-copy";
+            const label = document.createElement("span");
+            label.textContent = name;
+            const value = document.createElement("strong");
+            value.textContent = rupiah.format(amount);
+            const percent = document.createElement("small");
+            percent.textContent = `${Math.round(amount / total * 100)}% dari pengeluaran`;
+            copy.append(label, value, percent);
+            item.append(swatch, copy);
+            legend.append(item);
+        }
+    });
+    if (entries.length > 4) {
+        const otherTotal = entries.slice(4).reduce((sum, entry) => sum + entry[1], 0);
+        const item = document.createElement("div");
+        item.className = "home-expense-legend-item";
+        const swatch = document.createElement("span");
+        swatch.className = "home-expense-swatch";
+        swatch.style.backgroundColor = "#87929f";
+        const copy = document.createElement("div");
+        copy.className = "home-expense-legend-copy";
+        const label = document.createElement("span");
+        label.textContent = `${entries.length - 4} kategori lainnya`;
+        const value = document.createElement("strong");
+        value.textContent = rupiah.format(otherTotal);
+        const percent = document.createElement("small");
+        percent.textContent = `${Math.round(otherTotal / total * 100)}% dari pengeluaran`;
+        copy.append(label, value, percent);
+        item.append(swatch, copy);
+        legend.append(item);
+    }
+    insight.replaceChildren();
+    const icon = document.createElement("span");
+    icon.className = "home-insight-icon";
+    icon.textContent = "✦";
+    const message = document.createElement("p");
+    const biggest = entries[0];
+    const pct = Math.round(biggest[1] / total * 100);
+    message.append("Pengeluaran terbesar bulan ini ada di ");
+    const category = document.createElement("strong");
+    category.textContent = biggest[0];
+    message.append(category, ` — ${rupiah.format(biggest[1])} atau ${pct}% dari total pengeluaran.`);
+    insight.append(icon, message);
+}
+
 function renderHomeTransactions(transactions) {
     homeTransactionList.replaceChildren();
     const latest = transactions.slice(0, 3);
@@ -1996,6 +2100,7 @@ async function loadTransactions() {
         `${monthlyTransactionCount} transaksi`;
 
     renderHomeTransactions(cachedTransactions);
+    renderHomeExpenseComposition();
     renderHistoryTransactions();
     renderWalletList();
     renderHomeWalletBalances();
