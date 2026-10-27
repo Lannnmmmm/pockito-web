@@ -4743,3 +4743,41 @@ textarea:focus-visible {
     .target-overview-card { padding: 11px 12px; }
     .target-overview-icon { flex-basis: 34px; width: 34px; height: 34px; }
 }
+
+
+/* Make target icon selection easy to discover */
+.target-icon-picker-collapsible {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 0 12px;
+    background: var(--surface);
+}
+.target-icon-picker-collapsible > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 62px;
+    padding: 9px 0;
+    list-style: none;
+}
+.target-icon-picker-collapsible > summary::-webkit-details-marker { display: none; }
+.target-icon-summary-copy { display: flex; flex-direction: column; gap: 4px; }
+.target-icon-summary-copy strong { font-size: 13px; }
+.target-icon-summary-copy small { color: var(--muted); font-size: 11px; font-weight: 400; }
+.target-icon-summary-preview {
+    display: grid;
+    place-items: center;
+    flex: 0 0 42px;
+    width: 42px;
+    height: 42px;
+    border: 1px solid var(--border);
+    border-radius: 13px;
+    background: var(--surface-soft, var(--surface));
+    font-size: 23px;
+}
+.target-icon-picker-collapsible[open] > summary { border-bottom: 1px solid var(--border); }
+.target-icon-picker-collapsible .target-icon-picker-inline { padding: 14px 0 4px; }
+.target-icon-option { cursor: pointer; }
+:root[data-theme="dark"] .target-icon-picker-collapsible { background: #171e28; }
+:root[data-theme="dark"] .target-icon-summary-preview { background: #242d39; }
