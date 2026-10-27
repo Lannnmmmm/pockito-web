@@ -2501,6 +2501,7 @@ document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
         closeFloatingOverlay(quickInputOverlay);
         closeFloatingOverlay(moreMenuOverlay);
+        if (transactionModalOverlay && !transactionModalOverlay.hidden) closeTransactionModal();
     }
 });
 
