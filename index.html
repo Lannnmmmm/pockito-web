@@ -395,6 +395,20 @@
                         <button type="button" id="show-target-form" class="target-create-toggle">+ Target baru</button>
                     </div>
                     <p class="panel-description">Pisahkan uang untuk tujuan tertentu tanpa menghitung transfer sebagai pemasukan atau pengeluaran.</p>
+                    <div class="target-overview" aria-label="Ringkasan target tabungan">
+                        <div class="target-overview-card">
+                            <span class="target-overview-icon" aria-hidden="true">🎯</span>
+                            <div><small>Target aktif</small><strong id="target-overview-count">0</strong></div>
+                        </div>
+                        <div class="target-overview-card target-overview-saved">
+                            <span class="target-overview-icon" aria-hidden="true">🐷</span>
+                            <div><small>Total dana tersimpan</small><strong id="target-overview-saved">Rp0</strong></div>
+                        </div>
+                        <div class="target-overview-card">
+                            <span class="target-overview-icon" aria-hidden="true">🏁</span>
+                            <div><small>Target tercapai</small><strong id="target-overview-progress">0%</strong></div>
+                        </div>
+                    </div>
                     <form id="target-form" hidden>
                         <label for="target-name">Nama target</label>
                         <input id="target-name" type="text" maxlength="80" required placeholder="Contoh: Mahar, Liburan, Dana darurat">
