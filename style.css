@@ -4224,3 +4224,96 @@ body:has(#dashboard-section:not([hidden])) { padding-bottom: 112px; }
 .pockito-calendar-heading{display:grid;grid-template-columns:40px 1fr 40px;align-items:center;gap:8px;margin-bottom:12px;text-align:center}.pockito-calendar-heading strong{text-transform:capitalize;font-size:15px}.pockito-calendar-nav{min-height:38px;padding:4px;color:var(--text);background:var(--background);border:1px solid var(--border);border-radius:11px;font-size:24px}.pockito-calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}.pockito-calendar-weekday{display:grid;place-items:center;min-height:30px;color:var(--muted);font-size:11px;font-weight:700}.pockito-calendar-day{min-height:39px;padding:4px;color:var(--text);background:transparent;border:1px solid transparent;border-radius:11px;font-size:13px;font-weight:600}.pockito-calendar-day:hover{color:var(--primary-dark);background:color-mix(in srgb,var(--primary) 12%,var(--surface))}.pockito-calendar-day.selected{color:white;background:var(--primary);border-color:var(--primary)}:root[data-theme="dark"] .pockito-calendar-day.selected{color:#172019}.pockito-calendar-day.today{border-color:var(--primary)}.pockito-calendar-blank{min-height:39px}.pockito-picker-today{width:100%;min-height:39px;margin-top:12px;padding:8px;color:var(--primary-dark);background:color-mix(in srgb,var(--primary) 10%,var(--surface));border:1px solid color-mix(in srgb,var(--primary) 24%,var(--border));border-radius:12px;font-size:12px}.pockito-picker-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:18px;padding-top:15px;border-top:1px solid var(--border)}.pockito-picker-selected{min-width:0;color:var(--muted);font-size:12px}.pockito-picker-done{flex:0 0 auto;min-height:42px;padding:10px 16px;border-radius:12px}.pockito-time-picker{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.pockito-time-unit{display:flex;flex-direction:column;gap:9px;text-align:center}.pockito-time-unit>span{color:var(--muted);font-size:12px;font-weight:700}.pockito-time-controls{display:flex;flex-direction:column;align-items:center;gap:8px;padding:10px 4px;background:var(--background);border:1px solid var(--border);border-radius:15px}.pockito-time-controls button{width:34px;min-height:32px;padding:2px;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:9px;font-size:19px}.pockito-time-controls strong{font-size:26px;font-variant-numeric:tabular-nums}
 @keyframes pockito-menu-in{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}@keyframes pockito-picker-in{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}:root[data-theme="dark"] .pockito-select-trigger,:root[data-theme="dark"] .pockito-picker-trigger{background:#1b211d}:root[data-theme="dark"] .pockito-picker-card{background:#202622}:root[data-theme="dark"] .pockito-picker-tabs button.active{background:#303832}
 @media(max-width:520px){.pockito-picker-backdrop{align-items:flex-end;padding:12px 10px calc(16px + env(safe-area-inset-bottom))}.pockito-picker-card{padding:19px;border-radius:24px}.pockito-calendar-day{min-height:37px}}@media(prefers-reduced-motion:reduce){.pockito-picker-card,.pockito-select-menu{animation:none}}
+
+
+/* Consistent custom controls in every Pockito form, including Kredit and Kategori. */
+.pockito-hidden-native-control {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    min-height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+    opacity: 0 !important;
+}
+.pockito-select-wrap { min-width: 0; }
+.pockito-select-wrap .pockito-select-trigger { min-height: 46px; }
+.credit-form-grid .pockito-select-wrap,
+.credit-form-grid .pockito-picker-trigger { width: 100%; min-width: 0; }
+section[data-view="credit"] .credit-form-grid input:not([type="checkbox"]),
+section[data-view="credit"] .credit-form-grid .pockito-picker-trigger,
+section[data-view="credit"] .credit-form-grid .pockito-select-trigger {
+    min-height: 48px;
+    border-radius: 13px;
+}
+section[data-view="credit"] .credit-form-grid input:not([type="checkbox"]) {
+    padding: 12px 13px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+}
+section[data-view="credit"] .credit-form-grid input:focus-visible {
+    outline: none;
+    border-color: var(--credit-blue);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--credit-blue) 16%, transparent);
+}
+section[data-view="credit"] .credit-form-note {
+    border-radius: 12px;
+    line-height: 1.6;
+}
+section[data-view="credit"] .credit-form-actions {
+    gap: 9px;
+    margin-top: 16px;
+}
+section[data-view="credit"] .credit-bill-filter {
+    min-height: 42px;
+    max-width: 210px;
+    border-radius: 12px;
+}
+section[data-view="credit"] .credit-plan-form,
+section[data-view="credit"] .credit-account-form {
+    border-radius: 17px;
+}
+:root[data-theme="dark"] section[data-view="credit"] {
+    --credit-blue: #8ab0ff;
+    --credit-blue-deep: #b7ceff;
+    --credit-blue-soft: #26364f;
+    --credit-blue-line: #3b4c68;
+}
+:root[data-theme="dark"] section[data-view="credit"] .credit-beta-badge {
+    color: #c6d8ff;
+    background: #26364f;
+    border-color: #3b4c68;
+}
+:root[data-theme="dark"] section[data-view="credit"] .credit-subtab:hover {
+    color: #d5e2ff;
+    background: #26364f;
+}
+:root[data-theme="dark"] section[data-view="credit"] .credit-subtab.active {
+    color: #111827;
+    background: #a9c4ff;
+}
+:root[data-theme="dark"] section[data-view="credit"] .credit-metric-grid:not(.credit-bill-summary) .credit-metric-card:first-child {
+    color: #f5f8ff;
+    background: linear-gradient(140deg, #34558b 0%, #263f6b 65%, #1c2e50 100%);
+    box-shadow: 0 12px 26px rgb(0 0 0 / 20%);
+}
+:root[data-theme="dark"] section[data-view="credit"] .credit-metric-grid:not(.credit-bill-summary) .credit-metric-card:first-child p,
+:root[data-theme="dark"] section[data-view="credit"] .credit-metric-grid:not(.credit-bill-summary) .credit-metric-card:first-child small {
+    color: rgb(245 248 255 / 78%);
+}
+:root[data-theme="dark"] section[data-view="credit"] .credit-empty-state {
+    background: color-mix(in srgb, var(--credit-blue) 5%, var(--surface));
+}
+:root[data-theme="dark"] section[data-view="credit"] .credit-account-status {
+    background: #1e3b2d;
+    color: #9ee0b8;
+}
+:root[data-theme="dark"] section[data-view="credit"] .credit-plan-status {
+    background: #26364f;
+    color: #c6d8ff;
+}
