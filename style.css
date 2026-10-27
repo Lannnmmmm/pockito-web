@@ -4399,3 +4399,52 @@ section[data-view="credit"] .credit-account-form {
 @media (prefers-reduced-motion: reduce) {
     .target-card, .target-progress-bar, .wallet-icon-choice, .wallet-color-choice { transition: none; }
 }
+
+
+/* History and report finishing pass — layout and presentation only. */
+.history-summary { gap: 9px; margin-bottom: 14px; }
+.history-summary > div {
+    min-height: 76px;
+    padding: 13px 14px;
+    border: 1px solid var(--border);
+    border-radius: 15px;
+}
+.history-summary strong { line-height: 1.35; font-variant-numeric: tabular-nums; letter-spacing: -.015em; }
+.history-count { margin-bottom: 12px; line-height: 1.5; }
+.month-nav-button { min-width: 40px; min-height: 40px; border-radius: 12px; transition: background-color .16s ease, transform .16s ease; }
+.month-nav-button:active { transform: scale(.97); }
+
+.report-metric-grid { gap: 9px; }
+.report-metric {
+    min-height: 86px;
+    padding: 14px;
+    border-radius: 15px;
+    box-shadow: 0 4px 14px rgb(0 0 0 / 2%);
+}
+.report-metric strong { line-height: 1.35; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.report-insight { border: 1px solid var(--border); line-height: 1.65; }
+.report-chart-layout { gap: 16px; }
+.report-donut { filter: drop-shadow(0 5px 12px rgb(0 0 0 / 5%)); }
+.report-legend { gap: 13px; }
+.report-legend-row { padding-bottom: 9px; border-bottom: 1px solid var(--border); }
+.report-legend-row:last-child { padding-bottom: 0; border-bottom: 0; }
+.report-legend-values strong { font-variant-numeric: tabular-nums; }
+:root[data-theme="dark"] .history-summary > div,
+:root[data-theme="dark"] .report-metric {
+    background: #202722;
+    border-color: #343d36;
+    box-shadow: none;
+}
+:root[data-theme="dark"] .report-insight { background: #202722; }
+:root[data-theme="dark"] .report-legend-row { border-color: #343d36; }
+
+@media (max-width: 420px) {
+    .history-summary { gap: 7px; }
+    .history-summary > div { min-height: 70px; padding: 11px; }
+    .report-metric-grid { gap: 7px; }
+    .report-metric { min-height: 78px; padding: 11px; }
+    .report-chart-layout { gap: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .month-nav-button { transition: none; }
+}
