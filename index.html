@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pockito — Catatan Keuangan</title>
-    <link rel="stylesheet" href="style.css?v=20261027-ui-refresh-v1">
+    <link rel="stylesheet" href="style.css?v=20261027-ui-refresh-v2">
 </head>
 <body>
     <main class="app">
@@ -189,7 +189,7 @@
                 </div>
             </section>
 
-            <section data-view="input" hidden>
+            <section class="transaction-modal-overlay" data-view="input" hidden aria-label="Formulir transaksi">
                 <div class="panel transaction-entry-panel">
                     <div class="transaction-entry-heading">
                         <div>
@@ -197,7 +197,7 @@
                             <h2 id="transaction-entry-title">Pengeluaran baru</h2>
                             <p class="panel-description" id="transaction-entry-description">Catat uang yang kamu keluarkan.</p>
                         </div>
-                        <span class="transaction-entry-badge" id="transaction-entry-badge" aria-hidden="true">↘</span>
+                        <div class="transaction-entry-heading-actions"><span class="transaction-entry-badge" id="transaction-entry-badge" aria-hidden="true">↘</span><button type="button" class="floating-menu-close transaction-modal-close" id="close-transaction-modal" aria-label="Tutup formulir">×</button></div>
                     </div>
                     <form id="transaction-form">
                         <div class="transaction-type-switch" role="group" aria-label="Jenis transaksi">
@@ -718,6 +718,6 @@
         </section>
     </main>
 
-    <script type="module" src="app.js?v=20261027-ui-refresh-v1"></script>
+    <script type="module" src="app.js?v=20261027-ui-refresh-v2"></script>
 </body>
 </html>
