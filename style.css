@@ -4637,3 +4637,20 @@ textarea:focus-visible {
     .home-expense-insight { padding:12px; }
 }
 :root[data-theme="dark"] [data-view="home"] .balance-panel .section-kicker { color:#dbe7ff; }
+
+
+/* Compact month-over-month indicators for the homepage. */
+.home-month-comparison { margin-top:15px; padding-top:14px; border-top:1px solid var(--border); }
+.home-comparison-label { color:var(--muted); font-size:11px; }
+.home-comparison-values { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin-top:10px; }
+.home-comparison-item { display:flex; align-items:center; gap:7px; min-width:0; color:var(--muted); font-size:11px; }
+.home-comparison-item strong { margin-left:auto; color:var(--text); font-size:12px; white-space:nowrap; }
+.home-comparison-dot { flex:0 0 7px; width:7px; height:7px; border-radius:50%; }
+.home-comparison-dot.income-dot { background:#258451; }
+.home-comparison-dot.expense-dot { background:#d34f48; }
+:root[data-theme="dark"] .home-comparison-dot.income-dot { background:#83d6a2; }
+:root[data-theme="dark"] .home-comparison-dot.expense-dot { background:#ff9d94; }
+@media (max-width:390px) {
+ .home-comparison-values { grid-template-columns:1fr; gap:9px; }
+ .home-comparison-item { font-size:12px; }
+}
