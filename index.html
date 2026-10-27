@@ -306,6 +306,21 @@
                         </div>
                         <p id="history-transaction-count" class="history-count">0 transaksi</p>
                     </div>
+                    <div class="history-tools" role="search">
+                        <label class="history-search-field" for="history-search">
+                            <span aria-hidden="true">⌕</span>
+                            <input id="history-search" type="search" placeholder="Cari keterangan atau kategori..." autocomplete="off">
+                        </label>
+                        <label class="history-type-field" for="history-type-filter">
+                            <span class="sr-only">Filter jenis transaksi</span>
+                            <select id="history-type-filter">
+                                <option value="all">Semua jenis</option>
+                                <option value="income">Pemasukan</option>
+                                <option value="expense">Pengeluaran</option>
+                            </select>
+                        </label>
+                    </div>
+                    <div id="history-filter-status" class="history-filter-status" aria-live="polite"></div>
                     <div id="transaction-list"></div>
                 </div>
             </section>
