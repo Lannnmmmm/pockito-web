@@ -1876,6 +1876,15 @@ function renderHistoryTransactions() {
     const monthTransactions = cachedTransactions.filter((transaction) =>
         transaction.transaction_date?.startsWith(selectedMonth)
     );
+    const searchTerm = (document.getElementById("history-search")?.value || "").trim().toLocaleLowerCase("id-ID");
+    const typeFilter = document.getElementById("history-type-filter")?.value || "all";
+    const filteredTransactions = monthTransactions.filter((transaction) => {
+        const categoryName = getCategoryName(transaction.category_id);
+        const searchableText = [transaction.description, categoryName, transaction.notes]
+            .filter(Boolean).join(" ").toLocaleLowerCase("id-ID");
+        return (typeFilter === "all" || transaction.type === typeFilter)
+            && (!searchTerm || searchableText.includes(searchTerm));
+    });
 
     let income = 0;
     let expense = 0;
@@ -1884,7 +1893,8 @@ function renderHistoryTransactions() {
     for (const transaction of monthTransactions) {
         if (transaction.type === "income") income += Number(transaction.amount);
         else expense += Number(transaction.amount);
-
+    }
+    for (const transaction of filteredTransactions) {
         const dateKey = transaction.transaction_date || "tanggal-tidak-diketahui";
         if (!transactionsByDay.has(dateKey)) transactionsByDay.set(dateKey, []);
         transactionsByDay.get(dateKey).push(transaction);
@@ -1929,15 +1939,22 @@ function renderHistoryTransactions() {
     document.getElementById("history-expense").textContent = rupiah.format(expense);
     document.getElementById("history-transaction-count").textContent =
         `${monthTransactions.length} transaksi`;
+    const filterStatus = document.getElementById("history-filter-status");
+    const hasActiveFilter = Boolean(searchTerm) || typeFilter !== "all";
+    filterStatus.textContent = hasActiveFilter
+        ? `Menampilkan ${filteredTransactions.length} dari ${monthTransactions.length} transaksi`
+        : "";
 
     const nextMonth = new Date(historyMonth.getFullYear(), historyMonth.getMonth() + 1, 1);
     document.getElementById("history-next-month").disabled =
         monthKey(nextMonth) > monthKey(new Date());
 
-    if (monthTransactions.length === 0) {
+    if (filteredTransactions.length === 0) {
         const empty = document.createElement("p");
         empty.className = "empty-note";
-        empty.textContent = `Belum ada transaksi pada ${monthLabel(historyMonth)}.`;
+        empty.textContent = monthTransactions.length === 0
+            ? `Belum ada transaksi pada ${monthLabel(historyMonth)}.`
+            : "Tidak ada transaksi yang cocok. Coba ubah kata kunci atau filter.";
         transactionList.append(empty);
     }
 }
@@ -2493,6 +2510,9 @@ document.getElementById("report-next-month").addEventListener("click", () => {
         renderReports();
     }
 });
+
+document.getElementById("history-search").addEventListener("input", renderHistoryTransactions);
+document.getElementById("history-type-filter").addEventListener("change", renderHistoryTransactions);
 
 document.getElementById("history-prev-month").addEventListener("click", () => {
     historyMonth = new Date(historyMonth.getFullYear(), historyMonth.getMonth() - 1, 1);
