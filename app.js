@@ -2036,14 +2036,25 @@ function renderReportBreakdown(containerId, transactions, type) {
 
 function renderReports() {
     const selectedMonth = monthKey(reportMonth);
+    const previousMonthDate = new Date(reportMonth.getFullYear(), reportMonth.getMonth() - 1, 1);
+    const previousMonthKey = monthKey(previousMonthDate);
     const transactions = cachedTransactions.filter((transaction) =>
         transaction.transaction_date?.startsWith(selectedMonth)
     );
+    const previousTransactions = cachedTransactions.filter((transaction) =>
+        transaction.transaction_date?.startsWith(previousMonthKey)
+    );
     let income = 0;
     let expense = 0;
+    let previousIncome = 0;
+    let previousExpense = 0;
     for (const transaction of transactions) {
         if (transaction.type === "income") income += Number(transaction.amount);
         else if (transaction.type === "expense") expense += Number(transaction.amount);
+    }
+    for (const transaction of previousTransactions) {
+        if (transaction.type === "income") previousIncome += Number(transaction.amount);
+        else if (transaction.type === "expense") previousExpense += Number(transaction.amount);
     }
     const remaining = income - expense;
     const spentPercent = income > 0 ? expense / income * 100 : null;
@@ -2053,6 +2064,33 @@ function renderReports() {
     document.getElementById("report-remaining").textContent = rupiah.format(remaining);
     document.getElementById("report-spent-percent").textContent =
         spentPercent === null ? "—" : `${Math.round(spentPercent)}%`;
+
+    const renderChange = (current, previous, kind) => {
+        if (previous === 0) {
+            if (current === 0) return { text: "Tetap", className: "neutral" };
+            return { text: "Baru", className: "neutral" };
+        }
+        const change = Math.round((current - previous) / previous * 100);
+        const direction = change > 0 ? "+" : "";
+        const className = change === 0 ? "neutral"
+            : kind === "expense" ? (change > 0 ? "negative" : "positive")
+            : (change > 0 ? "positive" : "negative");
+        return { text: `${direction}${change}%`, className };
+    };
+    document.getElementById("report-comparison-period").textContent =
+        `vs ${monthLabel(previousMonthDate)}`;
+    document.getElementById("report-income-previous").textContent =
+        `Bulan lalu: ${rupiah.format(previousIncome)}`;
+    document.getElementById("report-expense-previous").textContent =
+        `Bulan lalu: ${rupiah.format(previousExpense)}`;
+    [["report-income-change", income, previousIncome, "income"],
+        ["report-expense-change", expense, previousExpense, "expense"]].forEach(([id, current, previous, kind]) => {
+        const element = document.getElementById(id);
+        const result = renderChange(current, previous, kind);
+        element.textContent = result.text;
+        element.className = `report-change-${result.className}`;
+    });
+
     const insight = document.getElementById("report-insight");
     if (transactions.length === 0) {
         insight.textContent = "Belum ada transaksi pada periode ini.";
