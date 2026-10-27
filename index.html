@@ -415,7 +415,10 @@
                         <label for="target-amount">Nominal target (opsional)</label>
                         <input id="target-amount" type="number" min="1" step="1" placeholder="Contoh: 15000000">
                         <details class="target-icon-picker-collapsible">
-                            <summary>Ikon target: <strong id="target-create-icon-preview">🐷</strong> <span>· Ubah ikon</span></summary>
+                            <summary>
+                                <span class="target-icon-summary-copy"><strong>Pilih ikon target</strong><small>Sesuaikan ikon dengan tujuan tabunganmu</small></span>
+                                <span class="target-icon-summary-preview" aria-hidden="true" id="target-create-icon-preview">🐷</span>
+                            </summary>
                             <div id="target-create-icon-picker" class="target-icon-picker target-icon-picker-inline"></div>
                         </details>
                         <div class="target-create-form-actions">
