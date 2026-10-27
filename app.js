@@ -1648,13 +1648,17 @@ function showView(viewName) {
         view.hidden = view.dataset.view !== viewName;
     }
 
+    const moreViews = ["targets", "credit", "categories", "wallets"];
     for (const button of viewButtons) {
         const isActive = button.dataset.viewTarget === viewName;
         button.classList.toggle("active", isActive);
         button.setAttribute("aria-current", isActive ? "page" : "false");
     }
-
-    document.querySelector(".nav-more")?.removeAttribute("open");
+    if (openMoreMenuButton) {
+        const moreIsActive = moreViews.includes(viewName);
+        openMoreMenuButton.classList.toggle("active", moreIsActive);
+        openMoreMenuButton.setAttribute("aria-current", moreIsActive ? "page" : "false");
+    }
 }
 
 function monthKey(date) {
@@ -2295,6 +2299,8 @@ transactionForm.addEventListener("submit", async (event) => {
         await loadTransactions();
         await loadWallets();
 
+        syncTransactionTypeChoice();
+        closeFloatingOverlay(quickInputOverlay);
         showMessage(transactionMessage, "Transaksi berhasil disimpan!");
     } catch (error) {
         console.error("Gagal menyimpan transaksi:", error);
@@ -2382,9 +2388,108 @@ document.getElementById("history-next-month").addEventListener("click", () => {
 
 transactionType.addEventListener("change", renderCategoryOptions);
 
-for (const button of viewButtons) {
-    button.addEventListener("click", () => showView(button.dataset.viewTarget));
+const quickInputOverlay = document.getElementById("quick-input-overlay");
+const moreMenuOverlay = document.getElementById("more-menu-overlay");
+const openQuickInputButton = document.getElementById("open-quick-input");
+const openMoreMenuButton = document.getElementById("open-more-menu");
+const transactionTypeChoices = document.querySelectorAll("[data-transaction-type-choice]");
+
+function closeFloatingOverlay(overlay) {
+    if (!overlay) return;
+    overlay.classList.remove("is-open");
+    overlay.setAttribute("aria-hidden", "true");
+    if (overlay === moreMenuOverlay && openMoreMenuButton) {
+        openMoreMenuButton.setAttribute("aria-expanded", "false");
+    }
 }
+
+function openFloatingOverlay(overlay) {
+    if (!overlay) return;
+    closeFloatingOverlay(quickInputOverlay);
+    closeFloatingOverlay(moreMenuOverlay);
+    overlay.classList.add("is-open");
+    overlay.setAttribute("aria-hidden", "false");
+    if (overlay === moreMenuOverlay && openMoreMenuButton) {
+        openMoreMenuButton.setAttribute("aria-expanded", "true");
+    }
+}
+
+function syncTransactionTypeChoice() {
+    const isIncome = transactionType.value === "income";
+    transactionTypeChoices.forEach((button) => {
+        const active = button.dataset.transactionTypeChoice === transactionType.value;
+        button.classList.toggle("active", active);
+        button.setAttribute("aria-pressed", String(active));
+    });
+    const title = document.getElementById("transaction-entry-title");
+    const description = document.getElementById("transaction-entry-description");
+    const badge = document.getElementById("transaction-entry-badge");
+    const submit = transactionForm.querySelector('button[type="submit"]');
+    if (title) title.textContent = isIncome ? "Pendapatan baru" : "Pengeluaran baru";
+    if (description) description.textContent = isIncome ? "Catat uang yang kamu terima." : "Catat uang yang kamu keluarkan.";
+    if (badge) badge.textContent = isIncome ? "↗" : "↘";
+    if (submit) submit.textContent = isIncome ? "Simpan pendapatan" : "Simpan pengeluaran";
+}
+
+if (openQuickInputButton) {
+    openQuickInputButton.addEventListener("click", () => openFloatingOverlay(quickInputOverlay));
+}
+if (openMoreMenuButton) {
+    openMoreMenuButton.addEventListener("click", () => {
+        const isOpen = moreMenuOverlay?.classList.contains("is-open");
+        if (isOpen) closeFloatingOverlay(moreMenuOverlay);
+        else openFloatingOverlay(moreMenuOverlay);
+    });
+}
+
+document.querySelectorAll("[data-input-type]").forEach((button) => {
+    button.addEventListener("click", () => {
+        transactionType.value = button.dataset.inputType;
+        transactionType.dispatchEvent(new Event("change", { bubbles: true }));
+        syncTransactionTypeChoice();
+        closeFloatingOverlay(quickInputOverlay);
+        showView("input");
+        document.getElementById("transaction-amount")?.focus({ preventScroll: true });
+    });
+});
+
+transactionTypeChoices.forEach((button) => {
+    button.addEventListener("click", () => {
+        transactionType.value = button.dataset.transactionTypeChoice;
+        transactionType.dispatchEvent(new Event("change", { bubbles: true }));
+        syncTransactionTypeChoice();
+    });
+});
+
+document.querySelectorAll("[data-close-overlay]").forEach((button) => {
+    button.addEventListener("click", () => {
+        const overlay = document.getElementById(button.dataset.closeOverlay);
+        closeFloatingOverlay(overlay);
+    });
+});
+
+[quickInputOverlay, moreMenuOverlay].forEach((overlay) => {
+    if (!overlay) return;
+    overlay.addEventListener("click", (event) => {
+        if (event.target === overlay) closeFloatingOverlay(overlay);
+    });
+});
+
+document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+        closeFloatingOverlay(quickInputOverlay);
+        closeFloatingOverlay(moreMenuOverlay);
+    }
+});
+
+for (const button of viewButtons) {
+    button.addEventListener("click", () => {
+        showView(button.dataset.viewTarget);
+        closeFloatingOverlay(moreMenuOverlay);
+        closeFloatingOverlay(quickInputOverlay);
+    });
+}
+syncTransactionTypeChoice();
 
 /* Cicilan & Kredit: akun kredit tersimpan di Supabase.
    Pencatatan rencana cicilan/pembayaran sengaja belum diaktifkan agar saldo tidak salah hitung. */
