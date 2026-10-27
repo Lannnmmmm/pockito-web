@@ -2074,18 +2074,24 @@ async function loadTransactions() {
     let lifetimeExpense = 0;
     let monthlyIncome = 0;
     let monthlyExpense = 0;
+    let previousMonthIncome = 0;
+    let previousMonthExpense = 0;
     let monthlyTransactionCount = 0;
+    const previousMonth = monthKey(new Date(now.getFullYear(), now.getMonth() - 1, 1));
 
     for (const transaction of cachedTransactions) {
         const amount = Number(transaction.amount);
         const isCurrentMonth = transaction.transaction_date?.startsWith(currentMonth);
+        const isPreviousMonth = transaction.transaction_date?.startsWith(previousMonth);
 
         if (transaction.type === "income") {
             lifetimeIncome += amount;
             if (isCurrentMonth) monthlyIncome += amount;
+            if (isPreviousMonth) previousMonthIncome += amount;
         } else {
             lifetimeExpense += amount;
             if (isCurrentMonth) monthlyExpense += amount;
+            if (isPreviousMonth) previousMonthExpense += amount;
         }
 
         if (isCurrentMonth) monthlyTransactionCount += 1;
@@ -2098,6 +2104,16 @@ async function loadTransactions() {
         rupiah.format(lifetimeIncome - lifetimeExpense);
     document.getElementById("monthly-transaction-count").textContent =
         `${monthlyTransactionCount} transaksi`;
+
+    const formatMonthChange = (current, previous) => {
+        if (previous === 0) return current === 0 ? "Tetap" : "Baru";
+        const change = Math.round((current - previous) / previous * 100);
+        return `${change > 0 ? "+" : ""}${change}%`;
+    };
+    document.getElementById("home-income-change").textContent =
+        formatMonthChange(monthlyIncome, previousMonthIncome);
+    document.getElementById("home-expense-change").textContent =
+        formatMonthChange(monthlyExpense, previousMonthExpense);
 
     renderHomeTransactions(cachedTransactions);
     renderHomeExpenseComposition();
