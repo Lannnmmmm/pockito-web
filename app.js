@@ -356,6 +356,25 @@ async function loadSavingsTargets() {
 }
 
 function renderSavingsTargets() {
+    const activeTargets = cachedSavingsTargets.filter((item) => item.status === "active" && !item.deleted_at);
+    const activeSavedTotal = activeTargets.reduce((sum, target) => sum + targetSavedBalance(target.id), 0);
+    const targetGoalTotal = activeTargets.reduce((sum, target) => {
+        const amount = target.target_amount === null ? 0 : Number(target.target_amount);
+        return sum + (Number.isFinite(amount) && amount > 0 ? amount : 0);
+    }, 0);
+    const targetProgressTotal = targetGoalTotal > 0
+        ? Math.min(100, Math.round(activeTargets.reduce((sum, target) => {
+            const amount = target.target_amount === null ? 0 : Number(target.target_amount);
+            return sum + (Number.isFinite(amount) && amount > 0 ? Math.min(targetSavedBalance(target.id), amount) : 0);
+        }, 0) / targetGoalTotal * 100))
+        : 0;
+    const overviewCount = document.getElementById("target-overview-count");
+    const overviewSaved = document.getElementById("target-overview-saved");
+    const overviewProgress = document.getElementById("target-overview-progress");
+    if (overviewCount) overviewCount.textContent = String(activeTargets.length);
+    if (overviewSaved) overviewSaved.textContent = rupiah.format(activeSavedTotal);
+    if (overviewProgress) overviewProgress.textContent = targetGoalTotal > 0 ? `${targetProgressTotal}%` : "—";
+
     const activeList = document.getElementById("active-target-list");
     const completedList = document.getElementById("completed-target-list");
     const buriedList = document.getElementById("buried-target-list");
