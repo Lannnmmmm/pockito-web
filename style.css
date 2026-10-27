@@ -4092,3 +4092,59 @@ body:has(#dashboard-section:not([hidden])) { padding-bottom: 112px; }
 @media (prefers-reduced-motion: reduce) {
     .quick-input-overlay, .floating-menu-card, .nav-plus-button, .quick-input-option { transition: none !important; }
 }
+
+
+/* Transaction input is presented as a focused modal sheet, while keeping the same form and submit logic. */
+.transaction-modal-overlay:not([hidden]) {
+    position: fixed;
+    inset: 0;
+    z-index: 120;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow-y: auto;
+    padding: 24px 14px;
+    background: rgb(14 18 15 / 42%);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    animation: transaction-modal-backdrop-in 180ms ease both;
+}
+.transaction-modal-overlay .transaction-entry-panel {
+    width: min(100%, 510px);
+    max-height: min(88vh, 760px);
+    overflow-y: auto;
+    margin: auto;
+    padding: clamp(19px, 4vw, 28px);
+    border-radius: 26px;
+    box-shadow: 0 24px 80px rgb(0 0 0 / 25%);
+    animation: transaction-modal-card-in 220ms cubic-bezier(.2,.8,.2,1) both;
+}
+.transaction-entry-heading-actions { display: flex; align-items: center; gap: 9px; flex: 0 0 auto; }
+.transaction-modal-close { width: 36px; height: 36px; }
+.transaction-modal-overlay .transaction-entry-heading { align-items: center; }
+.transaction-modal-overlay .transaction-extra-fields[open] { margin-bottom: 3px; }
+.transaction-modal-overlay .transaction-primary-fields { gap: 13px; }
+@keyframes transaction-modal-backdrop-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+@keyframes transaction-modal-card-in {
+    from { opacity: 0; transform: translateY(16px) scale(.985); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+:root[data-theme="dark"] .transaction-modal-overlay { background: rgb(0 0 0 / 56%); }
+:root[data-theme="dark"] .transaction-modal-overlay .transaction-entry-panel { background: #202622; }
+@media (max-width: 600px) {
+    .transaction-modal-overlay:not([hidden]) {
+        align-items: flex-end;
+        padding: 10px 10px calc(86px + env(safe-area-inset-bottom));
+    }
+    .transaction-modal-overlay .transaction-entry-panel {
+        max-height: min(82vh, 760px);
+        padding: 19px;
+        border-radius: 24px;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .transaction-modal-overlay:not([hidden]), .transaction-modal-overlay .transaction-entry-panel { animation: none; }
+}
