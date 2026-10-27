@@ -2442,8 +2442,14 @@ if (openMoreMenuButton) {
     });
 }
 
+let previousViewBeforeInput = "home";
+
 document.querySelectorAll("[data-input-type]").forEach((button) => {
     button.addEventListener("click", () => {
+        const currentView = [...views].find((view) => !view.hidden);
+        if (currentView && currentView.dataset.view !== "input") {
+            previousViewBeforeInput = currentView.dataset.view;
+        }
         transactionType.value = button.dataset.inputType;
         transactionType.dispatchEvent(new Event("change", { bubbles: true }));
         syncTransactionTypeChoice();
@@ -2452,6 +2458,22 @@ document.querySelectorAll("[data-input-type]").forEach((button) => {
         document.getElementById("transaction-amount")?.focus({ preventScroll: true });
     });
 });
+
+function closeTransactionModal() {
+    showView(previousViewBeforeInput || "home");
+}
+
+const closeTransactionModalButton = document.getElementById("close-transaction-modal");
+if (closeTransactionModalButton) {
+    closeTransactionModalButton.addEventListener("click", closeTransactionModal);
+}
+
+const transactionModalOverlay = document.querySelector('.transaction-modal-overlay[data-view="input"]');
+if (transactionModalOverlay) {
+    transactionModalOverlay.addEventListener("click", (event) => {
+        if (event.target === transactionModalOverlay) closeTransactionModal();
+    });
+}
 
 transactionTypeChoices.forEach((button) => {
     button.addEventListener("click", () => {
