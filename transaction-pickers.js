@@ -1,6 +1,6 @@
 (() => {
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
-const dates=$('input[type="date"]'), date=$("#transaction-date"), time=$("#transaction-time"), category=$("#transaction-category"), wallet=$("#transaction-wallet"); let activeDate=date;
+const dates=$$('input[type="date"]'), date=$("#transaction-date"), time=$("#transaction-time"), category=$("#transaction-category"), wallet=$("#transaction-wallet"); let activeDate=date; let activeDate=date;
 const modal=document.createElement("div"); modal.className="pockito-picker-backdrop"; modal.hidden=true;
 modal.innerHTML='<section class="pockito-picker-card" role="dialog" aria-modal="true" aria-label="Pilih tanggal dan waktu"><header class="pockito-picker-header"><div><span class="pockito-picker-eyebrow">ATUR TRANSAKSI</span><h3 class="pockito-picker-title">Pilih tanggal</h3></div><button type="button" class="pockito-picker-close" aria-label="Tutup">×</button></header><div class="pockito-picker-tabs"><button type="button" data-mode="date" class="active">▦ Tanggal</button><button type="button" data-mode="time">◷ Waktu</button></div><div class="pockito-picker-content"></div><footer class="pockito-picker-footer"><span class="pockito-picker-selected"></span><button type="button" class="pockito-picker-done">Selesai</button></footer></section>';
 document.body.append(modal); let mode="date", month=new Date();
