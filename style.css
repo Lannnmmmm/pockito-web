@@ -4448,3 +4448,69 @@ section[data-view="credit"] .credit-account-form {
 @media (prefers-reduced-motion: reduce) {
     .month-nav-button { transition: none; }
 }
+
+
+/* Final responsive comfort pass — no behavior changes. */
+.app { min-width: 0; }
+.app-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.app-header > * { min-width: 0; }
+.panel { overflow-wrap: anywhere; }
+button, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+button { touch-action: manipulation; }
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--primary) 78%, white);
+    outline-offset: 2px;
+}
+.form-field,
+.form-grid,
+.credit-form-grid,
+.category-create { min-width: 0; }
+.form-field input,
+.form-field select,
+.form-field textarea,
+.form-grid input,
+.form-grid select,
+.credit-form-grid input,
+.credit-form-grid select { max-width: 100%; }
+#dashboard-section { min-width: 0; }
+[data-view] { min-width: 0; }
+[data-view] .panel + .panel { margin-top: 14px; }
+
+@media (max-width: 600px) {
+    body { padding-left: 12px; padding-right: 12px; }
+    .app-header { gap: 10px; margin-bottom: 21px; }
+    .eyebrow { font-size: 10px; letter-spacing: 1.6px; }
+    .subtitle { max-width: 29ch; font-size: 13px; line-height: 1.5; }
+    .theme-toggle { flex: 0 0 auto; }
+    .panel { margin-bottom: 14px; }
+    .section-kicker { letter-spacing: 1.2px; }
+    .form-field { gap: 7px; }
+    .form-field label { line-height: 1.4; }
+    .credit-panel-heading { align-items: flex-start; gap: 12px; }
+    .credit-panel-heading > * { min-width: 0; }
+    .credit-bill-filter { max-width: 46%; }
+    .quick-input-overlay { padding: 16px; }
+    .floating-menu-card { width: min(100%, 440px); }
+}
+@media (max-width: 390px) {
+    body { padding-left: 10px; padding-right: 10px; }
+    .app-header { align-items: flex-start; }
+    .app-header h1 { font-size: 29px; }
+    .subtitle { font-size: 12px; }
+    .theme-toggle { padding: 8px; }
+    .theme-toggle-label { display: none; }
+    .panel { padding: 15px; border-radius: 16px; }
+    .balance-panel { padding: 19px 16px; }
+    .form-grid,
+    .credit-form-grid { gap: 11px; }
+    .credit-panel-heading { flex-direction: column; }
+    .credit-bill-filter { max-width: 100%; width: 100%; }
+    .credit-form-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .credit-form-actions button { min-width: 0; padding-inline: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
