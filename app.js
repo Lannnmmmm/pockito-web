@@ -132,6 +132,11 @@ function renderTargetIconPicker(container, selectedIcon, onSelect) {
     });
 }
 
+function isMissingTargetCategoryColumn(error) {
+    const message = String(error?.message || "").toLowerCase();
+    return message.includes("category") && (message.includes("column") || message.includes("schema cache") || message.includes("does not exist"));
+}
+
 function isMissingTargetIconColumn(error) {
     const message = String(error?.message || "").toLowerCase();
     return message.includes("icon") &&
@@ -307,7 +312,7 @@ async function loadSavingsTargets() {
     let loadedTargets = [];
     const { data: targets, error: targetError } = await supabase
         .from("savings_targets")
-        .select("id, name, target_amount, icon, status, created_at, completed_at, deleted_at")
+        .select("id, name, target_amount, icon, category, status, created_at, completed_at, deleted_at")
         .eq("user_id", currentUser.id)
         .order("created_at", { ascending: false });
     if (targetError && isMissingTargetDeletedAtColumn(targetError)) {
@@ -404,6 +409,10 @@ function renderSavingsTargets() {
             ? `${rupiah.format(saved)} terkumpul`
             : `${rupiah.format(saved)} / ${rupiah.format(targetAmount)}`;
         titleBlock.append(title, amountLine);
+        const categoryLabel = document.createElement("small");
+        categoryLabel.className = "target-category-label";
+        categoryLabel.textContent = target.category || "Lainnya";
+        titleBlock.append(categoryLabel);
 
         if (progress !== null) {
             const progressMeta = document.createElement("div");
@@ -641,6 +650,8 @@ async function editSavingsTarget(target) {
                 <input id="edit-target-name" type="text" maxlength="80" required>
                 <label for="edit-target-amount">Nominal target (opsional)</label>
                 <input id="edit-target-amount" type="number" min="1" step="1" inputmode="numeric" placeholder="Kosongkan jika belum ditentukan">
+                <label for="edit-target-category">Kategori target</label>
+                <select id="edit-target-category" required><option value="Pernikahan">💍 Pernikahan</option><option value="Liburan">✈️ Liburan</option><option value="Dana darurat">🛟 Dana darurat</option><option value="Rumah &amp; kendaraan">🏡 Rumah &amp; kendaraan</option><option value="Pendidikan">🎓 Pendidikan</option><option value="Gadget &amp; hobi">🎮 Gadget &amp; hobi</option><option value="Keluarga">❤️ Keluarga</option><option value="Lainnya" selected>🎯 Lainnya</option></select>
                 <span class="target-icon-picker-heading">Pilih ikon</span>
                 <div class="target-icon-picker"></div>
                 <p class="target-modal-error" role="alert" hidden></p>
@@ -653,11 +664,13 @@ async function editSavingsTarget(target) {
     const form = overlay.querySelector("form");
     const nameInput = overlay.querySelector("#edit-target-name");
     const amountInput = overlay.querySelector("#edit-target-amount");
+    const categorySelect = overlay.querySelector("#edit-target-category");
     const picker = overlay.querySelector(".target-icon-picker");
     const errorMessage = overlay.querySelector(".target-modal-error");
     let selectedIcon = target.icon || "🐷";
     nameInput.value = target.name;
     amountInput.value = target.target_amount ?? "";
+    categorySelect.value = target.category || "Lainnya";
     renderTargetIconPicker(picker, selectedIcon, (emoji) => { selectedIcon = emoji; });
 
     const close = () => {
@@ -687,12 +700,13 @@ async function editSavingsTarget(target) {
         errorMessage.hidden = true;
         try {
             let result = await supabase.from("savings_targets")
-                .update({ name, target_amount: targetAmount, icon: selectedIcon })
+                .update({ name, target_amount: targetAmount, icon: selectedIcon, category: categorySelect.value })
                 .eq("id", target.id).eq("user_id", currentUser.id).is("deleted_at", null);
-            if (result.error && isMissingTargetIconColumn(result.error)) {
-                result = await supabase.from("savings_targets")
-                    .update({ name, target_amount: targetAmount })
-                    .eq("id", target.id).eq("user_id", currentUser.id).is("deleted_at", null);
+            if (result.error && (isMissingTargetIconColumn(result.error) || isMissingTargetCategoryColumn(result.error))) {
+                errorMessage.textContent = "Jalankan migrasi kategori target di Supabase dulu agar ikon dan kategori bisa disimpan.";
+                errorMessage.hidden = false;
+                submit.disabled = false;
+                return;
             }
             if (result.error && isMissingTargetDeletedAtColumn(result.error)) {
                 errorMessage.textContent = "Jalankan migrasi Pockito terbaru di Supabase dulu agar fitur target bisa digunakan.";
@@ -3606,6 +3620,7 @@ document.getElementById("target-form").addEventListener("submit", async (event) 
     if (!currentUser) return;
     const nameInput = document.getElementById("target-name");
     const amountInput = document.getElementById("target-amount");
+    const categoryInput = document.getElementById("target-category");
     const name = nameInput.value.trim();
     const targetAmount = amountInput.value.trim() === "" ? null : Number(amountInput.value);
     if (!name || (targetAmount !== null && (!Number.isFinite(targetAmount) || targetAmount <= 0))) {
@@ -3614,12 +3629,11 @@ document.getElementById("target-form").addEventListener("submit", async (event) 
     }
     try {
         let result = await supabase.from("savings_targets").insert({
-            user_id: currentUser.id, name, target_amount: targetAmount, icon: selectedNewTargetIcon
+            user_id: currentUser.id, name, target_amount: targetAmount, icon: selectedNewTargetIcon,
+            category: categoryInput.value
         });
-        if (result.error && isMissingTargetIconColumn(result.error)) {
-            result = await supabase.from("savings_targets").insert({
-                user_id: currentUser.id, name, target_amount: targetAmount
-            });
+        if (result.error && (isMissingTargetIconColumn(result.error) || isMissingTargetCategoryColumn(result.error))) {
+            throw new Error("Kolom kategori target belum tersedia. Jalankan migrasi Supabase terbaru dulu.");
         }
         if (result.error) throw result.error;
         selectedNewTargetIcon = "🐷";
